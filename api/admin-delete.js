@@ -43,9 +43,9 @@ export default async function handler(req, res) {
     }
 
     await deleteTable("saved_recipes", `recipe_id=eq.${recipeId}`);
-    await deleteTable("reviews", `recipe_id=eq.${recipeId}`);
     await deleteTable("recipe_ingredients", `recipe_id=eq.${recipeId}`);
     await deleteTable("recipe_steps", `recipe_id=eq.${recipeId}`);
+    await deleteTable("reviews", `recipe_id=eq.${recipeId}`);
     await deleteTable("recipes", `id=eq.${recipeId}`);
 
     return res.status(200).json({ ok: true });
