@@ -6,127 +6,380 @@
   <title>우리의 레시피</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { margin:0; font-family: Arial; background:#f6f1eb; }
-    .wrap { max-width:900px; margin:0 auto; padding:20px; }
-    .btn { padding:12px; border-radius:10px; border:none; cursor:pointer; }
-    .btn-primary { background:#ff8a00; color:white; }
-    .card { background:white; padding:15px; border-radius:15px; margin-bottom:15px; }
-    img { width:100%; border-radius:10px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f6f1eb;
+      color: #222;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .hero {
+      background: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+    }
+    .btn {
+      padding: 12px 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .btn-primary {
+      background: #ff8a00;
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #eee2d4;
+      color: #5b4029;
+    }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+      background: #ebe5de;
+    }
+    .card-body {
+      padding: 16px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+    }
+    .empty {
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      text-align: center;
+      color: #777;
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .modal-box {
+      background: #fff;
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    }
+    .field {
+      margin-bottom: 14px;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      background: #fff;
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    .list-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .preview {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 14px;
+      display: none;
+      margin-top: 10px;
+      background: #ebe5de;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
   </style>
 </head>
-
 <body>
-<div class="wrap">
-
-<h1>우리의 레시피</h1>
-
-<button class="btn btn-primary" onclick="openUpload()">레시피 올리기</button>
-
-<div id="list"></div>
-
-</div>
-
-<div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);">
-  <div style="background:white; padding:20px; margin:50px;">
-    <input id="title" placeholder="제목"><br><br>
-    <textarea id="summary" placeholder="설명"></textarea><br><br>
-
-    <input type="file" id="image"><br><br>
-
-    <div id="ingredients"></div>
-    <button onclick="addIng()">+재료</button><br><br>
-
-    <div id="steps"></div>
-    <button onclick="addStep()">+순서</button><br><br>
-
-    <button onclick="submit()">등록</button>
-    <button onclick="closeUpload()">닫기</button>
-  </div>
-</div>
-
-<script>
-const supabase = window.supabase.createClient(
-  "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
-  "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
-);
-
-function openUpload() {
-  document.getElementById("modal").style.display="block";
-}
-
-function closeUpload() {
-  document.getElementById("modal").style.display="none";
-}
-
-function addIng() {
-  let d=document.createElement("input");
-  d.placeholder="재료";
-  document.getElementById("ingredients").appendChild(d);
-}
-
-function addStep() {
-  let d=document.createElement("input");
-  d.placeholder="순서";
-  document.getElementById("steps").appendChild(d);
-}
-
-async function submit() {
-  let title=document.getElementById("title").value;
-  let summary=document.getElementById("summary").value;
-
-  let file=document.getElementById("image").files[0];
-  let fileName=Date.now()+file.name;
-
-  await supabase.storage.from("recipe-images").upload(fileName,file);
-
-  let url=supabase.storage.from("recipe-images").getPublicUrl(fileName).data.publicUrl;
-
-  let {data}=await supabase.from("recipes").insert({
-    title:title,
-    summary:summary,
-    image_url:url
-  }).select().single();
-
-  let id=data.id;
-
-  let ings=[...document.querySelectorAll("#ingredients input")];
-  for(let i=0;i<ings.length;i++){
-    await supabase.from("recipe_ingredients").insert({
-      recipe_id:id,
-      content:ings[i].value
-    });
-  }
-
-  let steps=[...document.querySelectorAll("#steps input")];
-  for(let i=0;i<steps.length;i++){
-    await supabase.from("recipe_steps").insert({
-      recipe_id:id,
-      content:steps[i].value
-    });
-  }
-
-  location.reload();
-}
-
-async function load() {
-  let {data}=await supabase.from("recipes").select("*").order("id",{ascending:false});
-
-  let html="";
-  data.forEach(r=>{
-    html+=`
-    <div class="card">
-      <img src="${r.image_url}">
-      <h3>${r.title}</h3>
-      <p>${r.summary}</p>
+  <div class="wrap">
+    <div class="hero">
+      <h1>우리의 레시피</h1>
+      <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
     </div>
-    `;
-  });
 
-  document.getElementById("list").innerHTML=html;
-}
+    <div id="list"></div>
+  </div>
 
-load();
-</script>
+  <div class="modal-bg" id="modal">
+    <div class="modal-box">
+      <h2>레시피 등록</h2>
 
+      <div class="field">
+        <label for="title">제목</label>
+        <input id="title" placeholder="예: 참치김치볶음밥" />
+      </div>
+
+      <div class="field">
+        <label for="summary">설명</label>
+        <textarea id="summary" placeholder="예: 자취할 때 빠르게 해먹기 좋은 메뉴"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="image">완성 사진 1장</label>
+        <input type="file" id="image" accept="image/*" />
+        <img id="preview" class="preview" />
+      </div>
+
+      <div class="field">
+        <label>재료</label>
+        <div id="ingredients"></div>
+        <button type="button" class="btn btn-secondary" id="addIngBtn">+ 재료 추가</button>
+      </div>
+
+      <div class="field">
+        <label>요리 순서</label>
+        <div id="steps"></div>
+        <button type="button" class="btn btn-secondary" id="addStepBtn">+ 순서 추가</button>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="submitBtn">등록</button>
+        <button type="button" class="btn btn-secondary" id="closeBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
+      "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
+    );
+
+    const modal = document.getElementById("modal");
+    const listEl = document.getElementById("list");
+    const previewEl = document.getElementById("preview");
+
+    function openUpload() {
+      modal.style.display = "flex";
+    }
+
+    function closeUpload() {
+      modal.style.display = "none";
+    }
+
+    function addIng(value = "") {
+      const row = document.createElement("div");
+      row.className = "list-row";
+      row.innerHTML = `
+        <input placeholder="재료 입력" value="${value}">
+        <button type="button" class="btn btn-secondary">삭제</button>
+      `;
+      row.querySelector("button").onclick = () => row.remove();
+      document.getElementById("ingredients").appendChild(row);
+    }
+
+    function addStep(value = "") {
+      const row = document.createElement("div");
+      row.className = "list-row";
+      row.innerHTML = `
+        <input placeholder="순서 입력" value="${value}">
+        <button type="button" class="btn btn-secondary">삭제</button>
+      `;
+      row.querySelector("button").onclick = () => row.remove();
+      document.getElementById("steps").appendChild(row);
+    }
+
+    document.getElementById("openUploadBtn").addEventListener("click", openUpload);
+    document.getElementById("closeBtn").addEventListener("click", closeUpload);
+    document.getElementById("addIngBtn").addEventListener("click", () => addIng());
+    document.getElementById("addStepBtn").addEventListener("click", () => addStep());
+
+    document.getElementById("image").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function() {
+        previewEl.src = reader.result;
+        previewEl.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function submitRecipe() {
+      try {
+        const title = document.getElementById("title").value.trim();
+        const summary = document.getElementById("summary").value.trim();
+        const file = document.getElementById("image").files[0];
+
+        const ingredients = [...document.querySelectorAll("#ingredients input")]
+          .map(v => v.value.trim())
+          .filter(Boolean);
+
+        const steps = [...document.querySelectorAll("#steps input")]
+          .map(v => v.value.trim())
+          .filter(Boolean);
+
+        if (!title) {
+          alert("제목을 입력해 주세요.");
+          return;
+        }
+
+        if (!file) {
+          alert("사진을 선택해 주세요.");
+          return;
+        }
+
+        if (!ingredients.length) {
+          alert("재료를 1개 이상 입력해 주세요.");
+          return;
+        }
+
+        if (!steps.length) {
+          alert("요리 순서를 1개 이상 입력해 주세요.");
+          return;
+        }
+
+        const fileName = `${Date.now()}_${file.name}`;
+
+        const { error: uploadError } = await supabaseClient
+          .storage
+          .from("recipe-images")
+          .upload(fileName, file, { upsert: false });
+
+        if (uploadError) {
+          console.error(uploadError);
+          alert("이미지 업로드 오류");
+          return;
+        }
+
+        const { data: publicData } = supabaseClient
+          .storage
+          .from("recipe-images")
+          .getPublicUrl(fileName);
+
+        const imageUrl = publicData.publicUrl;
+
+        const { data: recipeRow, error: recipeError } = await supabaseClient
+          .from("recipes")
+          .insert({
+            title: title,
+            summary: summary,
+            image_url: imageUrl,
+            author_name: "익명"
+          })
+          .select()
+          .single();
+
+        if (recipeError) {
+          console.error(recipeError);
+          alert("레시피 저장 오류");
+          return;
+        }
+
+        for (let i = 0; i < ingredients.length; i++) {
+          const { error } = await supabaseClient.from("recipe_ingredients").insert({
+            recipe_id: recipeRow.id,
+            content: ingredients[i],
+            sort_order: i + 1
+          });
+          if (error) {
+            console.error(error);
+            alert("재료 저장 오류");
+            return;
+          }
+        }
+
+        for (let i = 0; i < steps.length; i++) {
+          const { error } = await supabaseClient.from("recipe_steps").insert({
+            recipe_id: recipeRow.id,
+            content: steps[i],
+            sort_order: i + 1
+          });
+          if (error) {
+            console.error(error);
+            alert("순서 저장 오류");
+            return;
+          }
+        }
+
+        alert("등록 완료");
+        location.reload();
+      } catch (e) {
+        console.error(e);
+        alert("등록 중 문제가 발생했습니다.");
+      }
+    }
+
+    document.getElementById("submitBtn").addEventListener("click", submitRecipe);
+
+    async function loadRecipes() {
+      const { data, error } = await supabaseClient
+        .from("recipes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        listEl.innerHTML = `<div class="empty">레시피를 불러오지 못했습니다.</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        listEl.innerHTML = `<div class="empty">등록된 레시피가 없습니다.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = data.map(r => `
+        <div class="card">
+          ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
+          <div class="card-body">
+            <h3>${r.title || ""}</h3>
+            <p>${r.summary || ""}</p>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    addIng();
+    addStep();
+    loadRecipes();
+  </script>
 </body>
 </html>
