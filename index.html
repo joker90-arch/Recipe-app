@@ -616,7 +616,19 @@
         listEl.innerHTML = `<div class="empty">${message}</div>`;
         return;
       }
+function changeTab(tab) {
+  state.currentTab = tab;
 
+  document.getElementById("tab-all").classList.remove("active");
+  document.getElementById("tab-mine").classList.remove("active");
+  document.getElementById("tab-saved").classList.remove("active");
+
+  if (tab === "all") document.getElementById("tab-all").classList.add("active");
+  if (tab === "mine") document.getElementById("tab-mine").classList.add("active");
+  if (tab === "saved") document.getElementById("tab-saved").classList.add("active");
+
+  renderRecipes();
+}
       listEl.innerHTML = data.map(r => `
         <div class="card">
           ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
