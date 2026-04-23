@@ -1048,14 +1048,7 @@
       reader.readAsDataURL(file);
     });
 
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.currentTab = btn.dataset.tab;
-        tabButtons.forEach(v => v.classList.remove("active"));
-        btn.classList.add("active");
-        renderRecipes();
-      });
-    });
+ 
 
     listEl.addEventListener("click", async (e) => {
       const btn = e.target.closest("button[data-action]");
