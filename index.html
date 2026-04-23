@@ -368,6 +368,45 @@
   </div>
 
   <script>
+    async function adminDeleteRecipe(recipeId) {
+  const token = prompt("관리자 삭제 비밀번호를 입력하세요");
+  if (!token) return;
+
+  const ok = confirm("관리자 권한으로 이 레시피를 삭제할까요?");
+  if (!ok) return;
+
+  try {
+    const response = await fetch("/api/admin-delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        recipeId,
+        token
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error || "관리자 삭제 실패");
+      return;
+    }
+
+    alert("관리자 삭제 완료");
+    await loadRecipes();
+  } catch (e) {
+    console.error(e);
+    alert("관리자 삭제 중 오류가 발생했습니다.");
+  }
+}
+    .btn-danger {
+  background: #d94b4b;
+  color: #fff;
+}
+    <button class="btn btn-danger" onclick="adminDeleteRecipe(${r.id})">관리자 삭제</button>
+    window.adminDeleteRecipe = adminDeleteRecipe;
     const supabaseClient = window.supabase.createClient(
       "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
       "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
