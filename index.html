@@ -42,14 +42,10 @@
       font-weight: 700;
       font-size: 15px;
     }
-    .btn-primary {
-      background: #ff8a00;
-      color: #fff;
-    }
-    .btn-secondary {
-      background: #eee2d4;
-      color: #5b4029;
-    }
+    .btn-primary { background: #ff8a00; color: #fff; }
+    .btn-secondary { background: #eee2d4; color: #5b4029; }
+    .btn-danger { background: #d94b4b; color: #fff; }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -83,12 +79,8 @@
       display: block;
       background: #ebe5de;
     }
-    .card-body {
-      padding: 16px;
-    }
-    .card h3 {
-      margin: 0 0 8px;
-    }
+    .card-body { padding: 16px; }
+    .card h3 { margin: 0 0 8px; }
     .meta {
       font-size: 14px;
       color: #666;
@@ -103,15 +95,9 @@
       margin-right: 6px;
       margin-bottom: 8px;
     }
-    .badge.mine {
-      background: #ffe7cc;
-      color: #a35700;
-    }
-    .badge.saved {
-      background: #e8f4ea;
-      color: #24663c;
-    }
-    .card-actions {
+    .badge.mine { background: #ffe7cc; color: #a35700; }
+    .badge.saved { background: #e8f4ea; color: #24663c; }
+    .card-actions, .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
@@ -180,12 +166,6 @@
       margin-top: 10px;
       background: #ebe5de;
     }
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-    }
     .detail-block {
       background: #f8f3ee;
       border-radius: 14px;
@@ -224,18 +204,13 @@
       font-size: 13px;
       line-height: 1.5;
     }
-    .section-title {
-      margin: 0 0 10px;
-      font-size: 20px;
-      font-weight: 800;
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="hero">
       <h1>우리의 레시피</h1>
-      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장하고, 먹어본 후기를 남기는 공간</p>
+      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장하고, 리뷰를 남기는 공간</p>
       <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
     </div>
 
@@ -248,6 +223,7 @@
     <div id="list"></div>
   </div>
 
+  <!-- 등록 모달 -->
   <div class="modal-bg" id="modal">
     <div class="modal-box">
       <h2>레시피 등록</h2>
@@ -294,6 +270,49 @@
     </div>
   </div>
 
+  <!-- 수정 모달 -->
+  <div class="modal-bg" id="editModal">
+    <div class="modal-box">
+      <h2>레시피 수정</h2>
+
+      <div class="field">
+        <label for="editTitle">제목</label>
+        <input id="editTitle" />
+      </div>
+
+      <div class="field">
+        <label for="editSummary">설명</label>
+        <textarea id="editSummary"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="editImage">새 완성 사진 (선택)</label>
+        <input type="file" id="editImage" accept="image/*" />
+        <img id="editPreview" class="preview" />
+      </div>
+
+      <div class="field">
+        <label>재료</label>
+        <div id="editIngredients"></div>
+        <button type="button" class="btn btn-secondary" id="editAddIngBtn">+ 재료 추가</button>
+      </div>
+
+      <div class="field">
+        <label>요리 순서</label>
+        <div id="editSteps"></div>
+        <button type="button" class="btn btn-secondary" id="editAddStepBtn">+ 순서 추가</button>
+      </div>
+
+      <div id="editError" class="error-box"></div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="saveEditBtn">수정 저장</button>
+        <button type="button" class="btn btn-secondary" id="closeEditBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 모달 -->
   <div class="modal-bg" id="detailModal">
     <div class="modal-box">
       <h2 id="detailTitle"></h2>
@@ -356,14 +375,18 @@
 
     const listEl = document.getElementById("list");
     const modal = document.getElementById("modal");
+    const editModal = document.getElementById("editModal");
     const detailModal = document.getElementById("detailModal");
     const previewEl = document.getElementById("preview");
+    const editPreviewEl = document.getElementById("editPreview");
     const tabButtons = document.querySelectorAll(".tab-btn");
     const uploadErrorEl = document.getElementById("uploadError");
+    const editErrorEl = document.getElementById("editError");
 
     let currentTab = "all";
     let allRecipes = [];
     let currentDetailRecipeId = null;
+    let currentEditRecipeId = null;
 
     function getOrCreateDeviceId() {
       let id = localStorage.getItem("our_recipe_device_id");
@@ -381,82 +404,13 @@
     }
 
     function setUploadError(message) {
-      if (!message) {
-        uploadErrorEl.style.display = "none";
-        uploadErrorEl.textContent = "";
-        return;
-      }
-      uploadErrorEl.style.display = "block";
-      uploadErrorEl.textContent = message;
+      uploadErrorEl.style.display = message ? "block" : "none";
+      uploadErrorEl.textContent = message || "";
     }
 
-    function openUpload() {
-      document.getElementById("authorName").value = getMyAuthorName();
-      setUploadError("");
-      modal.style.display = "flex";
-    }
-
-    function closeUpload() {
-      modal.style.display = "none";
-    }
-
-    async function openDetail(recipeId) {
-      const recipe = allRecipes.find(r => r.id === recipeId);
-      if (!recipe) return;
-
-      currentDetailRecipeId = recipeId;
-
-      document.getElementById("detailTitle").textContent = recipe.title || "";
-      document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
-      document.getElementById("detailSummary").textContent = recipe.summary || "";
-      document.getElementById("reviewAuthor").value = getMyAuthorName();
-      document.getElementById("reviewRating").value = "5";
-      document.getElementById("reviewComment").value = "";
-
-      const detailImage = document.getElementById("detailImage");
-      if (recipe.image_url) {
-        detailImage.src = recipe.image_url;
-        detailImage.style.display = "block";
-      } else {
-        detailImage.style.display = "none";
-      }
-
-      document.getElementById("detailIngredients").innerHTML =
-        (recipe.ingredients || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
-
-      document.getElementById("detailSteps").innerHTML =
-        (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
-
-      await loadReviews(recipeId);
-
-      detailModal.style.display = "flex";
-    }
-
-    function closeDetail() {
-      detailModal.style.display = "none";
-      currentDetailRecipeId = null;
-    }
-
-    function addIng(value = "") {
-      const row = document.createElement("div");
-      row.className = "list-row";
-      row.innerHTML = `
-        <input placeholder="재료 입력" value="${escapeHtml(value)}">
-        <button type="button" class="btn btn-secondary">삭제</button>
-      `;
-      row.querySelector("button").onclick = () => row.remove();
-      document.getElementById("ingredients").appendChild(row);
-    }
-
-    function addStep(value = "") {
-      const row = document.createElement("div");
-      row.className = "list-row";
-      row.innerHTML = `
-        <input placeholder="순서 입력" value="${escapeHtml(value)}">
-        <button type="button" class="btn btn-secondary">삭제</button>
-      `;
-      row.querySelector("button").onclick = () => row.remove();
-      document.getElementById("steps").appendChild(row);
+    function setEditError(message) {
+      editErrorEl.style.display = message ? "block" : "none";
+      editErrorEl.textContent = message || "";
     }
 
     function escapeHtml(text) {
@@ -472,20 +426,69 @@
       return "★".repeat(n) + "☆".repeat(5 - n);
     }
 
+    function openUpload() {
+      document.getElementById("authorName").value = getMyAuthorName();
+      setUploadError("");
+      modal.style.display = "flex";
+    }
+
+    function closeUpload() {
+      modal.style.display = "none";
+    }
+
+    function closeEdit() {
+      editModal.style.display = "none";
+      currentEditRecipeId = null;
+    }
+
+    function closeDetail() {
+      detailModal.style.display = "none";
+      currentDetailRecipeId = null;
+    }
+
+    function addField(containerId, value = "") {
+      const row = document.createElement("div");
+      row.className = "list-row";
+      row.innerHTML = `
+        <input placeholder="입력" value="${escapeHtml(value)}">
+        <button type="button" class="btn btn-secondary">삭제</button>
+      `;
+      row.querySelector("button").onclick = () => row.remove();
+      document.getElementById(containerId).appendChild(row);
+    }
+
+    function addIng(value = "") { addField("ingredients", value); }
+    function addStep(value = "") { addField("steps", value); }
+    function addEditIng(value = "") { addField("editIngredients", value); }
+    function addEditStep(value = "") { addField("editSteps", value); }
+
     document.getElementById("openUploadBtn").addEventListener("click", openUpload);
     document.getElementById("closeBtn").addEventListener("click", closeUpload);
+    document.getElementById("closeEditBtn").addEventListener("click", closeEdit);
     document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
     document.getElementById("addIngBtn").addEventListener("click", () => addIng());
     document.getElementById("addStepBtn").addEventListener("click", () => addStep());
+    document.getElementById("editAddIngBtn").addEventListener("click", () => addEditIng());
+    document.getElementById("editAddStepBtn").addEventListener("click", () => addEditStep());
 
     document.getElementById("image").addEventListener("change", e => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function() {
         previewEl.src = reader.result;
         previewEl.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("editImage").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function() {
+        editPreviewEl.src = reader.result;
+        editPreviewEl.style.display = "block";
       };
       reader.readAsDataURL(file);
     });
@@ -521,32 +524,15 @@
         const file = document.getElementById("image").files[0];
 
         const ingredients = [...document.querySelectorAll("#ingredients input")]
-          .map(v => v.value.trim())
-          .filter(Boolean);
+          .map(v => v.value.trim()).filter(Boolean);
 
         const steps = [...document.querySelectorAll("#steps input")]
-          .map(v => v.value.trim())
-          .filter(Boolean);
+          .map(v => v.value.trim()).filter(Boolean);
 
-        if (!title) {
-          setUploadError("제목을 입력해 주세요.");
-          return;
-        }
-
-        if (!file) {
-          setUploadError("사진을 선택해 주세요.");
-          return;
-        }
-
-        if (!ingredients.length) {
-          setUploadError("재료를 1개 이상 입력해 주세요.");
-          return;
-        }
-
-        if (!steps.length) {
-          setUploadError("요리 순서를 1개 이상 입력해 주세요.");
-          return;
-        }
+        if (!title) return setUploadError("제목을 입력해 주세요.");
+        if (!file) return setUploadError("사진을 선택해 주세요.");
+        if (!ingredients.length) return setUploadError("재료를 1개 이상 입력해 주세요.");
+        if (!steps.length) return setUploadError("요리 순서를 1개 이상 입력해 주세요.");
 
         localStorage.setItem("our_recipe_author_name", authorName);
 
@@ -558,7 +544,8 @@
             title,
             summary,
             image_url: imageUrl,
-            author_name: authorName
+            author_name: authorName,
+            owner_device_id: deviceId
           })
           .select()
           .single();
@@ -590,13 +577,41 @@
         setUploadError(
           "등록 중 오류가 발생했습니다.\n\n" +
           (e?.message || "") +
-          (e?.error_description ? "\n" + e.error_description : "") +
           (e?.details ? "\n" + e.details : "")
         );
       }
     }
 
-    document.getElementById("submitBtn").addEventListener("click", submitRecipe);
+    async function openDetail(recipeId) {
+      const recipe = allRecipes.find(r => r.id === recipeId);
+      if (!recipe) return;
+
+      currentDetailRecipeId = recipeId;
+
+      document.getElementById("detailTitle").textContent = recipe.title || "";
+      document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
+      document.getElementById("detailSummary").textContent = recipe.summary || "";
+      document.getElementById("reviewAuthor").value = getMyAuthorName();
+      document.getElementById("reviewRating").value = "5";
+      document.getElementById("reviewComment").value = "";
+
+      const detailImage = document.getElementById("detailImage");
+      if (recipe.image_url) {
+        detailImage.src = recipe.image_url;
+        detailImage.style.display = "block";
+      } else {
+        detailImage.style.display = "none";
+      }
+
+      document.getElementById("detailIngredients").innerHTML =
+        (recipe.ingredients || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      document.getElementById("detailSteps").innerHTML =
+        (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      await loadReviews(recipeId);
+      detailModal.style.display = "flex";
+    }
 
     async function submitReview() {
       try {
@@ -629,8 +644,6 @@
         alert("리뷰 등록 오류");
       }
     }
-
-    document.getElementById("submitReviewBtn").addEventListener("click", submitReview);
 
     async function loadReviews(recipeId) {
       const reviewListEl = document.getElementById("reviewList");
@@ -694,16 +707,154 @@
       await loadRecipes();
     }
 
-    function filterRecipes() {
-      if (currentTab === "mine") {
-        const myName = getMyAuthorName();
-        return allRecipes.filter(r => myName && r.author_name === myName);
+    async function openEdit(recipeId) {
+      const recipe = allRecipes.find(r => r.id === recipeId);
+      if (!recipe || recipe.owner_device_id !== deviceId) {
+        alert("수정 권한이 없습니다.");
+        return;
       }
 
+      currentEditRecipeId = recipeId;
+      setEditError("");
+
+      document.getElementById("editTitle").value = recipe.title || "";
+      document.getElementById("editSummary").value = recipe.summary || "";
+      document.getElementById("editImage").value = "";
+      editPreviewEl.src = recipe.image_url || "";
+      editPreviewEl.style.display = recipe.image_url ? "block" : "none";
+
+      const ingBox = document.getElementById("editIngredients");
+      const stepBox = document.getElementById("editSteps");
+      ingBox.innerHTML = "";
+      stepBox.innerHTML = "";
+
+      (recipe.ingredients || []).forEach(v => addEditIng(v));
+      (recipe.steps || []).forEach(v => addEditStep(v));
+
+      if (!(recipe.ingredients || []).length) addEditIng();
+      if (!(recipe.steps || []).length) addEditStep();
+
+      editModal.style.display = "flex";
+    }
+
+    async function saveEdit() {
+      try {
+        if (!currentEditRecipeId) return;
+
+        const recipe = allRecipes.find(r => r.id === currentEditRecipeId);
+        if (!recipe || recipe.owner_device_id !== deviceId) {
+          return setEditError("수정 권한이 없습니다.");
+        }
+
+        const title = document.getElementById("editTitle").value.trim();
+        const summary = document.getElementById("editSummary").value.trim();
+        const newFile = document.getElementById("editImage").files[0];
+
+        const ingredients = [...document.querySelectorAll("#editIngredients input")]
+          .map(v => v.value.trim()).filter(Boolean);
+
+        const steps = [...document.querySelectorAll("#editSteps input")]
+          .map(v => v.value.trim()).filter(Boolean);
+
+        if (!title) return setEditError("제목을 입력해 주세요.");
+        if (!ingredients.length) return setEditError("재료를 1개 이상 입력해 주세요.");
+        if (!steps.length) return setEditError("요리 순서를 1개 이상 입력해 주세요.");
+
+        let imageUrl = recipe.image_url;
+        if (newFile) {
+          imageUrl = await uploadImage(newFile);
+        }
+
+        const { error: updateError } = await supabaseClient
+          .from("recipes")
+          .update({
+            title,
+            summary,
+            image_url: imageUrl
+          })
+          .eq("id", currentEditRecipeId);
+
+        if (updateError) throw updateError;
+
+        const { error: delIngError } = await supabaseClient
+          .from("recipe_ingredients")
+          .delete()
+          .eq("recipe_id", currentEditRecipeId);
+
+        if (delIngError) throw delIngError;
+
+        const { error: delStepError } = await supabaseClient
+          .from("recipe_steps")
+          .delete()
+          .eq("recipe_id", currentEditRecipeId);
+
+        if (delStepError) throw delStepError;
+
+        const ingredientRows = ingredients.map((content, idx) => ({
+          recipe_id: currentEditRecipeId,
+          content,
+          sort_order: idx + 1
+        }));
+
+        const stepRows = steps.map((content, idx) => ({
+          recipe_id: currentEditRecipeId,
+          content,
+          sort_order: idx + 1
+        }));
+
+        const { error: ingError } = await supabaseClient.from("recipe_ingredients").insert(ingredientRows);
+        if (ingError) throw ingError;
+
+        const { error: stepError } = await supabaseClient.from("recipe_steps").insert(stepRows);
+        if (stepError) throw stepError;
+
+        alert("수정 완료");
+        closeEdit();
+        await loadRecipes();
+      } catch (e) {
+        console.error(e);
+        setEditError("수정 중 오류가 발생했습니다.\n\n" + (e?.message || ""));
+      }
+    }
+
+    async function deleteRecipe(recipeId) {
+      const recipe = allRecipes.find(r => r.id === recipeId);
+      if (!recipe || recipe.owner_device_id !== deviceId) {
+        alert("삭제 권한이 없습니다.");
+        return;
+      }
+
+      const ok = confirm("이 레시피를 삭제할까요?");
+      if (!ok) return;
+
+      try {
+        await supabaseClient.from("saved_recipes").delete().eq("recipe_id", recipeId);
+        await supabaseClient.from("reviews").delete().eq("recipe_id", recipeId);
+        await supabaseClient.from("recipe_ingredients").delete().eq("recipe_id", recipeId);
+        await supabaseClient.from("recipe_steps").delete().eq("recipe_id", recipeId);
+
+        const { error } = await supabaseClient
+          .from("recipes")
+          .delete()
+          .eq("id", recipeId);
+
+        if (error) throw error;
+
+        alert("삭제 완료");
+        await loadRecipes();
+      } catch (e) {
+        console.error(e);
+        alert("삭제 중 오류가 발생했습니다.");
+      }
+    }
+
+    function filterRecipes() {
+      if (currentTab === "mine") {
+        return allRecipes.filter(r => r.owner_device_id === deviceId);
+      }
       if (currentTab === "saved") {
         return allRecipes.filter(r => r.isSaved);
       }
-
       return allRecipes;
     }
 
@@ -722,7 +873,7 @@
         <div class="card">
           ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
           <div class="card-body">
-            ${r.isMine ? `<span class="badge mine">내 레시피</span>` : ``}
+            ${r.owner_device_id === deviceId ? `<span class="badge mine">내 레시피</span>` : ``}
             ${r.isSaved ? `<span class="badge saved">저장됨</span>` : ``}
             <h3>${escapeHtml(r.title || "")}</h3>
             <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")} · 평균 별점 ${Number(r.avg_rating || 0).toFixed(1)}</div>
@@ -732,6 +883,8 @@
                 ${r.isSaved ? "저장 해제" : "저장하기"}
               </button>
               <button class="btn btn-secondary" onclick="openDetail(${r.id})">자세히 보기</button>
+              ${r.owner_device_id === deviceId ? `<button class="btn btn-secondary" onclick="openEdit(${r.id})">수정</button>` : ``}
+              ${r.owner_device_id === deviceId ? `<button class="btn btn-danger" onclick="deleteRecipe(${r.id})">삭제</button>` : ``}
             </div>
           </div>
         </div>
@@ -804,14 +957,11 @@
         });
       }
 
-      const myName = getMyAuthorName();
-
       allRecipes = (recipes || []).map(r => ({
         ...r,
         ingredients: ingredientsMap[r.id] || [],
         steps: stepsMap[r.id] || [],
         isSaved: savedIds.has(r.id),
-        isMine: !!myName && r.author_name === myName,
         avg_rating: avgMap[r.id] || 0
       }));
 
@@ -827,8 +977,14 @@
       });
     });
 
+    document.getElementById("submitBtn").addEventListener("click", submitRecipe);
+    document.getElementById("submitReviewBtn").addEventListener("click", submitReview);
+    document.getElementById("saveEditBtn").addEventListener("click", saveEdit);
+
     window.toggleSave = toggleSave;
     window.openDetail = openDetail;
+    window.openEdit = openEdit;
+    window.deleteRecipe = deleteRecipe;
 
     addIng();
     addStep();
