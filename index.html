@@ -14,7 +14,7 @@
       color: #222;
     }
     .wrap {
-      max-width: 900px;
+      max-width: 980px;
       margin: 0 auto;
       padding: 20px;
     }
@@ -22,12 +22,17 @@
       background: #fff;
       border-radius: 20px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     }
     h1 {
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       font-size: 32px;
+    }
+    .hero p {
+      margin: 0 0 16px;
+      color: #666;
+      line-height: 1.6;
     }
     .btn {
       padding: 12px 14px;
@@ -44,6 +49,25 @@
     .btn-secondary {
       background: #eee2d4;
       color: #5b4029;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #fff;
+      color: #333;
+    }
+    .tab-btn.active {
+      background: #222;
+      color: #fff;
     }
     .card {
       background: #fff;
@@ -65,6 +89,34 @@
     .card h3 {
       margin: 0 0 8px;
     }
+    .meta {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 6px;
+      margin-bottom: 8px;
+    }
+    .badge.mine {
+      background: #ffe7cc;
+      color: #a35700;
+    }
+    .badge.saved {
+      background: #e8f4ea;
+      color: #24663c;
+    }
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
     .empty {
       background: #fff;
       border-radius: 18px;
@@ -72,7 +124,6 @@
       text-align: center;
       color: #777;
     }
-
     .modal-bg {
       position: fixed;
       inset: 0;
@@ -86,7 +137,7 @@
     .modal-box {
       background: #fff;
       width: 100%;
-      max-width: 640px;
+      max-width: 680px;
       max-height: 90vh;
       overflow-y: auto;
       border-radius: 20px;
@@ -135,13 +186,35 @@
       flex-wrap: wrap;
       margin-top: 16px;
     }
+    .detail-block {
+      background: #f8f3ee;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .detail-block h4 {
+      margin: 0 0 8px;
+    }
+    .detail-block ul,
+    .detail-block ol {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.8;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="hero">
       <h1>우리의 레시피</h1>
+      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장해서 모아볼 수 있는 공간</p>
       <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="all">모두의 레시피</button>
+      <button class="tab-btn" data-tab="mine">내가 올린 레시피</button>
+      <button class="tab-btn" data-tab="saved">저장한 레시피</button>
     </div>
 
     <div id="list"></div>
@@ -150,6 +223,11 @@
   <div class="modal-bg" id="modal">
     <div class="modal-box">
       <h2>레시피 등록</h2>
+
+      <div class="field">
+        <label for="authorName">작성자 이름</label>
+        <input id="authorName" placeholder="예: Joker90" />
+      </div>
 
       <div class="field">
         <label for="title">제목</label>
@@ -186,17 +264,61 @@
     </div>
   </div>
 
+  <div class="modal-bg" id="detailModal">
+    <div class="modal-box">
+      <h2 id="detailTitle"></h2>
+      <div class="meta" id="detailMeta"></div>
+      <img id="detailImage" class="preview" style="display:none; margin-top:0;" />
+      <div id="detailSummary" style="margin-top:12px; line-height:1.7;"></div>
+
+      <div class="detail-block">
+        <h4>재료</h4>
+        <ul id="detailIngredients"></ul>
+      </div>
+
+      <div class="detail-block">
+        <h4>요리 순서</h4>
+        <ol id="detailSteps"></ol>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" id="closeDetailBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const supabaseClient = window.supabase.createClient(
       "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
       "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
     );
 
-    const modal = document.getElementById("modal");
     const listEl = document.getElementById("list");
+    const modal = document.getElementById("modal");
+    const detailModal = document.getElementById("detailModal");
     const previewEl = document.getElementById("preview");
+    const tabButtons = document.querySelectorAll(".tab-btn");
+
+    let currentTab = "all";
+    let allRecipes = [];
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem("our_recipe_device_id");
+      if (!id) {
+        id = "device_" + crypto.randomUUID();
+        localStorage.setItem("our_recipe_device_id", id);
+      }
+      return id;
+    }
+
+    const deviceId = getOrCreateDeviceId();
+
+    function getMyAuthorName() {
+      return localStorage.getItem("our_recipe_author_name") || "";
+    }
 
     function openUpload() {
+      document.getElementById("authorName").value = getMyAuthorName();
       modal.style.display = "flex";
     }
 
@@ -204,11 +326,40 @@
       modal.style.display = "none";
     }
 
+    function openDetail(recipeId) {
+      const recipe = allRecipes.find(r => r.id === recipeId);
+      if (!recipe) return;
+
+      document.getElementById("detailTitle").textContent = recipe.title || "";
+      document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
+      document.getElementById("detailSummary").textContent = recipe.summary || "";
+
+      const detailImage = document.getElementById("detailImage");
+      if (recipe.image_url) {
+        detailImage.src = recipe.image_url;
+        detailImage.style.display = "block";
+      } else {
+        detailImage.style.display = "none";
+      }
+
+      document.getElementById("detailIngredients").innerHTML =
+        (recipe.ingredients || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      document.getElementById("detailSteps").innerHTML =
+        (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      detailModal.style.display = "flex";
+    }
+
+    function closeDetail() {
+      detailModal.style.display = "none";
+    }
+
     function addIng(value = "") {
       const row = document.createElement("div");
       row.className = "list-row";
       row.innerHTML = `
-        <input placeholder="재료 입력" value="${value}">
+        <input placeholder="재료 입력" value="${escapeHtml(value)}">
         <button type="button" class="btn btn-secondary">삭제</button>
       `;
       row.querySelector("button").onclick = () => row.remove();
@@ -219,15 +370,25 @@
       const row = document.createElement("div");
       row.className = "list-row";
       row.innerHTML = `
-        <input placeholder="순서 입력" value="${value}">
+        <input placeholder="순서 입력" value="${escapeHtml(value)}">
         <button type="button" class="btn btn-secondary">삭제</button>
       `;
       row.querySelector("button").onclick = () => row.remove();
       document.getElementById("steps").appendChild(row);
     }
 
+    function escapeHtml(text) {
+      return (text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
     document.getElementById("openUploadBtn").addEventListener("click", openUpload);
     document.getElementById("closeBtn").addEventListener("click", closeUpload);
+    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
     document.getElementById("addIngBtn").addEventListener("click", () => addIng());
     document.getElementById("addStepBtn").addEventListener("click", () => addStep());
 
@@ -245,6 +406,7 @@
 
     async function submitRecipe() {
       try {
+        const authorName = document.getElementById("authorName").value.trim() || "익명";
         const title = document.getElementById("title").value.trim();
         const summary = document.getElementById("summary").value.trim();
         const file = document.getElementById("image").files[0];
@@ -277,6 +439,8 @@
           return;
         }
 
+        localStorage.setItem("our_recipe_author_name", authorName);
+
         const fileName = `${Date.now()}_${file.name}`;
 
         const { error: uploadError } = await supabaseClient
@@ -300,10 +464,10 @@
         const { data: recipeRow, error: recipeError } = await supabaseClient
           .from("recipes")
           .insert({
-            title: title,
-            summary: summary,
+            title,
+            summary,
             image_url: imageUrl,
-            author_name: "익명"
+            author_name: authorName
           })
           .select()
           .single();
@@ -350,19 +514,61 @@
 
     document.getElementById("submitBtn").addEventListener("click", submitRecipe);
 
-    async function loadRecipes() {
-      const { data, error } = await supabaseClient
-        .from("recipes")
-        .select("*")
-        .order("created_at", { ascending: false });
+    async function toggleSave(recipeId) {
+      const recipe = allRecipes.find(r => r.id === recipeId);
+      if (!recipe) return;
 
-      if (error) {
-        listEl.innerHTML = `<div class="empty">레시피를 불러오지 못했습니다.</div>`;
-        return;
+      if (recipe.isSaved) {
+        const { error } = await supabaseClient
+          .from("saved_recipes")
+          .delete()
+          .eq("recipe_id", recipeId)
+          .eq("device_id", deviceId);
+
+        if (error) {
+          console.error(error);
+          alert("저장 해제 오류");
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from("saved_recipes")
+          .insert({
+            recipe_id: recipeId,
+            device_id: deviceId
+          });
+
+        if (error) {
+          console.error(error);
+          alert("저장 오류");
+          return;
+        }
       }
 
-      if (!data || !data.length) {
-        listEl.innerHTML = `<div class="empty">등록된 레시피가 없습니다.</div>`;
+      await loadRecipes();
+    }
+
+    function filterRecipes() {
+      if (currentTab === "mine") {
+        const myName = getMyAuthorName();
+        return allRecipes.filter(r => myName && r.author_name === myName);
+      }
+
+      if (currentTab === "saved") {
+        return allRecipes.filter(r => r.isSaved);
+      }
+
+      return allRecipes;
+    }
+
+    function renderRecipes() {
+      const data = filterRecipes();
+
+      if (!data.length) {
+        let message = "등록된 레시피가 없습니다.";
+        if (currentTab === "mine") message = "내가 올린 레시피가 없습니다.";
+        if (currentTab === "saved") message = "저장한 레시피가 없습니다.";
+        listEl.innerHTML = `<div class="empty">${message}</div>`;
         return;
       }
 
@@ -370,12 +576,95 @@
         <div class="card">
           ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
           <div class="card-body">
-            <h3>${r.title || ""}</h3>
-            <p>${r.summary || ""}</p>
+            ${r.isMine ? `<span class="badge mine">내 레시피</span>` : ``}
+            ${r.isSaved ? `<span class="badge saved">저장됨</span>` : ``}
+            <h3>${escapeHtml(r.title || "")}</h3>
+            <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
+            <p>${escapeHtml(r.summary || "")}</p>
+            <div class="card-actions">
+              <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" onclick="toggleSave(${r.id})">
+                ${r.isSaved ? "저장 해제" : "저장하기"}
+              </button>
+              <button class="btn btn-secondary" onclick="openDetail(${r.id})">자세히 보기</button>
+            </div>
           </div>
         </div>
       `).join("");
     }
+
+    async function loadRecipes() {
+      const { data: recipes, error } = await supabaseClient
+        .from("recipes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        listEl.innerHTML = `<div class="empty">레시피를 불러오지 못했습니다.</div>`;
+        return;
+      }
+
+      const recipeIds = (recipes || []).map(r => r.id);
+
+      let ingredientsMap = {};
+      let stepsMap = {};
+      let savedIds = new Set();
+
+      if (recipeIds.length) {
+        const { data: ingredients } = await supabaseClient
+          .from("recipe_ingredients")
+          .select("*")
+          .in("recipe_id", recipeIds)
+          .order("sort_order", { ascending: true });
+
+        const { data: steps } = await supabaseClient
+          .from("recipe_steps")
+          .select("*")
+          .in("recipe_id", recipeIds)
+          .order("sort_order", { ascending: true });
+
+        const { data: saves } = await supabaseClient
+          .from("saved_recipes")
+          .select("recipe_id")
+          .eq("device_id", deviceId);
+
+        (ingredients || []).forEach(item => {
+          if (!ingredientsMap[item.recipe_id]) ingredientsMap[item.recipe_id] = [];
+          ingredientsMap[item.recipe_id].push(item.content);
+        });
+
+        (steps || []).forEach(item => {
+          if (!stepsMap[item.recipe_id]) stepsMap[item.recipe_id] = [];
+          stepsMap[item.recipe_id].push(item.content);
+        });
+
+        savedIds = new Set((saves || []).map(v => v.recipe_id));
+      }
+
+      const myName = getMyAuthorName();
+
+      allRecipes = (recipes || []).map(r => ({
+        ...r,
+        ingredients: ingredientsMap[r.id] || [],
+        steps: stepsMap[r.id] || [],
+        isSaved: savedIds.has(r.id),
+        isMine: !!myName && r.author_name === myName
+      }));
+
+      renderRecipes();
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentTab = btn.dataset.tab;
+        tabButtons.forEach(v => v.classList.remove("active"));
+        btn.classList.add("active");
+        renderRecipes();
+      });
+    });
+
+    window.toggleSave = toggleSave;
+    window.openDetail = openDetail;
 
     addIng();
     addStep();
