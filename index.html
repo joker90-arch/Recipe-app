@@ -4,616 +4,129 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>우리의 레시피</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f7f1eb;
-      color: #222;
-    }
-
-    .wrap {
-      max-width: 920px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .hero {
-      background: #ffffff;
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      margin-bottom: 20px;
-    }
-
-    .hero h1 {
-      margin: 0 0 12px;
-      font-size: 42px;
-      line-height: 1.2;
-    }
-
-    .hero p {
-      margin: 0 0 20px;
-      color: #666;
-      line-height: 1.7;
-      font-size: 18px;
-    }
-
-    .hero-buttons {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 14px;
-      padding: 14px 18px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: #ff8a00;
-      color: #fff;
-    }
-
-    .btn-secondary {
-      background: #f3e9df;
-      color: #533b26;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      border: none;
-      background: #fff;
-      border-radius: 999px;
-      padding: 12px 16px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .tab-btn.active {
-      background: #222;
-      color: #fff;
-    }
-
-    .section-title {
-      font-size: 24px;
-      font-weight: 800;
-      margin: 12px 0 16px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 18px;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 22px;
-      padding: 22px;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
-    }
-
-    .card h3 {
-      margin: 0 0 10px;
-      font-size: 24px;
-      line-height: 1.3;
-    }
-
-    .meta {
-      font-size: 15px;
-      color: #777;
-      margin-bottom: 14px;
-    }
-
-    .desc {
-      font-size: 17px;
-      line-height: 1.6;
-      margin-bottom: 14px;
-    }
-
-    .review {
-      background: #fdf2e8;
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: 15px;
-      margin-bottom: 14px;
-    }
-
-    .tag {
-      display: inline-block;
-      background: #f4f4f4;
-      color: #555;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 13px;
-      margin-right: 6px;
-      margin-bottom: 6px;
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .save-btn,
-    .detail-btn,
-    .submit-btn,
-    .close-btn {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .save-btn {
-      background: #222;
-      color: #fff;
-    }
-
-    .save-btn.saved {
-      background: #ff8a00;
-      color: #fff;
-    }
-
-    .detail-btn {
-      background: #f3e9df;
-      color: #533b26;
-    }
-
-    .empty {
-      background: #fff;
-      border-radius: 22px;
-      padding: 26px;
-      text-align: center;
-      color: #777;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
-    }
-
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 999;
-    }
-
-    .modal {
-      background: #fff;
-      width: 100%;
-      max-width: 680px;
-      border-radius: 24px;
-      padding: 22px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .modal h2 {
-      margin-top: 0;
-      font-size: 28px;
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 700;
-      font-size: 15px;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      border: 1px solid #ddd;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 15px;
-      font-family: inherit;
-      background: #fff;
-    }
-
-    .form-group textarea {
-      min-height: 110px;
-      resize: vertical;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .submit-btn {
-      background: #ff8a00;
-      color: #fff;
-    }
-
-    .close-btn {
-      background: #ececec;
-      color: #333;
-    }
-
-    .detail-box {
-      background: #f8f4ef;
-      border-radius: 16px;
-      padding: 16px;
-      margin-top: 16px;
-    }
-
-    .detail-box h4 {
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
-
-    .detail-box ul,
-    .detail-box ol {
-      margin: 0;
-      padding-left: 20px;
-      line-height: 1.8;
-    }
-
-    @media (max-width: 640px) {
-      .hero h1 {
-        font-size: 30px;
-      }
-
-      .hero p {
-        font-size: 16px;
-      }
-
-      .card h3 {
-        font-size: 22px;
-      }
-    }
+    body { margin:0; font-family: Arial; background:#f6f1eb; }
+    .wrap { max-width:900px; margin:0 auto; padding:20px; }
+    .btn { padding:12px; border-radius:10px; border:none; cursor:pointer; }
+    .btn-primary { background:#ff8a00; color:white; }
+    .card { background:white; padding:15px; border-radius:15px; margin-bottom:15px; }
+    img { width:100%; border-radius:10px; }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <h1>우리의 레시피</h1>
-      <p>
-        내가 만든 레시피를 올리고, 다른 사람의 레시피를 저장하고,
-        직접 먹어본 뒤 간단한 후기를 남길 수 있는 우리만의 레시피 공간입니다.
-      </p>
-      <div class="hero-buttons">
-        <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
-        <button class="btn btn-secondary" id="goSavedBtn">저장한 레시피 보기</button>
-      </div>
-    </section>
+<div class="wrap">
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="all">모두의 레시피</button>
-      <button class="tab-btn" data-tab="saved">저장한 레시피</button>
-      <button class="tab-btn" data-tab="mine">내가 올린 레시피</button>
-    </div>
+<h1>우리의 레시피</h1>
 
-    <div id="content"></div>
+<button class="btn btn-primary" onclick="openUpload()">레시피 올리기</button>
+
+<div id="list"></div>
+
+</div>
+
+<div id="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);">
+  <div style="background:white; padding:20px; margin:50px;">
+    <input id="title" placeholder="제목"><br><br>
+    <textarea id="summary" placeholder="설명"></textarea><br><br>
+
+    <input type="file" id="image"><br><br>
+
+    <div id="ingredients"></div>
+    <button onclick="addIng()">+재료</button><br><br>
+
+    <div id="steps"></div>
+    <button onclick="addStep()">+순서</button><br><br>
+
+    <button onclick="submit()">등록</button>
+    <button onclick="closeUpload()">닫기</button>
   </div>
+</div>
 
-  <div class="modal-bg" id="uploadModal">
-    <div class="modal">
-      <h2>레시피 올리기</h2>
+<script>
+const supabase = window.supabase.createClient(
+  "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
+  "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
+);
 
-      <div class="form-group">
-        <label for="title">레시피 제목</label>
-        <input type="text" id="title" placeholder="예: 고추장 참치비빔밥" />
-      </div>
+function openUpload() {
+  document.getElementById("modal").style.display="block";
+}
 
-      <div class="form-group">
-        <label for="summary">간단 소개</label>
-        <input type="text" id="summary" placeholder="예: 자취할 때 빠르게 해먹기 좋은 한 그릇 메뉴" />
-      </div>
+function closeUpload() {
+  document.getElementById("modal").style.display="none";
+}
 
-      <div class="form-group">
-        <label for="time">조리 시간</label>
-        <input type="text" id="time" placeholder="예: 15분" />
-      </div>
+function addIng() {
+  let d=document.createElement("input");
+  d.placeholder="재료";
+  document.getElementById("ingredients").appendChild(d);
+}
 
-      <div class="form-group">
-        <label for="serving">인분</label>
-        <input type="text" id="serving" placeholder="예: 2인분" />
-      </div>
+function addStep() {
+  let d=document.createElement("input");
+  d.placeholder="순서";
+  document.getElementById("steps").appendChild(d);
+}
 
-      <div class="form-group">
-        <label for="tags">태그</label>
-        <input type="text" id="tags" placeholder="예: 자취요리, 초간단, 야식" />
-      </div>
+async function submit() {
+  let title=document.getElementById("title").value;
+  let summary=document.getElementById("summary").value;
 
-      <div class="form-group">
-        <label for="ingredients">재료</label>
-        <textarea id="ingredients" placeholder="예: 김치, 참치, 밥, 계란"></textarea>
-      </div>
+  let file=document.getElementById("image").files[0];
+  let fileName=Date.now()+file.name;
 
-      <div class="form-group">
-        <label for="steps">만드는 순서</label>
-        <textarea id="steps" placeholder="예: 1. 김치를 볶는다  2. 참치를 넣는다  3. 밥과 함께 비빈다"></textarea>
-      </div>
+  await supabase.storage.from("recipe-images").upload(fileName,file);
 
-      <div class="modal-actions">
-        <button class="close-btn" id="closeUploadBtn">닫기</button>
-        <button class="submit-btn" id="submitRecipeBtn">등록하기</button>
-      </div>
-    </div>
-  </div>
+  let url=supabase.storage.from("recipe-images").getPublicUrl(fileName).data.publicUrl;
 
-  <div class="modal-bg" id="detailModal">
-    <div class="modal">
-      <h2 id="detailTitle"></h2>
-      <div class="meta" id="detailMeta"></div>
-      <div class="desc" id="detailSummary"></div>
+  let {data}=await supabase.from("recipes").insert({
+    title:title,
+    summary:summary,
+    image_url:url
+  }).select().single();
 
-      <div class="detail-box">
-        <h4>재료</h4>
-        <ul id="detailIngredients"></ul>
-      </div>
+  let id=data.id;
 
-      <div class="detail-box">
-        <h4>만드는 순서</h4>
-        <ol id="detailSteps"></ol>
-      </div>
-
-      <div class="modal-actions">
-        <button class="close-btn" id="closeDetailBtn">닫기</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const defaultRecipes = [
-      {
-        id: 1,
-        title: "매콤 참치김치볶음밥",
-        time: "15분",
-        serving: "1인분",
-        summary: "김치, 참치, 밥만 있으면 빠르게 만들 수 있는 자취 레시피",
-        review: "간단한데 맛이 진해서 좋았어요.",
-        tags: ["자취요리", "한그릇", "매콤"],
-        ingredients: ["김치", "참치", "밥", "고추장", "참기름"],
-        steps: ["김치와 참치를 볶는다.", "밥과 양념을 넣고 섞는다.", "참기름으로 마무리한다."],
-        author: "모두의 레시피",
-        mine: false
-      },
-      {
-        id: 2,
-        title: "오버나이트 요거트볼",
-        time: "10분",
-        serving: "2인분",
-        summary: "그릭요거트와 과일로 가볍게 먹는 아침 메뉴",
-        review: "아침 대용으로 부담 없고 깔끔해요.",
-        tags: ["아침", "다이어트", "간편식"],
-        ingredients: ["그릭요거트", "블루베리", "바나나", "그래놀라", "꿀"],
-        steps: ["그릇에 요거트를 담는다.", "과일을 올린다.", "그래놀라와 꿀로 마무리한다."],
-        author: "모두의 레시피",
-        mine: false
-      },
-      {
-        id: 3,
-        title: "간장계란버터밥",
-        time: "5분",
-        serving: "1인분",
-        summary: "배고플 때 바로 해먹기 좋은 초간단 레시피",
-        review: "밤에 출출할 때 최고예요.",
-        tags: ["초간단", "야식", "자취요리"],
-        ingredients: ["밥", "계란", "간장", "버터", "김가루"],
-        steps: ["계란 프라이를 만든다.", "밥에 버터와 간장을 넣는다.", "계란과 김가루를 올린다."],
-        author: "모두의 레시피",
-        mine: false
-      }
-    ];
-
-    const storedMyRecipes = JSON.parse(localStorage.getItem("our_recipe_my_recipes") || "[]");
-    const storedSavedIds = JSON.parse(localStorage.getItem("our_recipe_saved_ids") || "[]");
-
-    let currentTab = "all";
-    let myRecipes = storedMyRecipes;
-    let savedIds = storedSavedIds;
-
-    const content = document.getElementById("content");
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const uploadModal = document.getElementById("uploadModal");
-    const detailModal = document.getElementById("detailModal");
-
-    function getAllRecipes() {
-      return [...myRecipes, ...defaultRecipes];
-    }
-
-    function saveLocal() {
-      localStorage.setItem("our_recipe_my_recipes", JSON.stringify(myRecipes));
-      localStorage.setItem("our_recipe_saved_ids", JSON.stringify(savedIds));
-    }
-
-    function renderRecipes() {
-      const allRecipes = getAllRecipes();
-      let recipesToShow = [];
-
-      if (currentTab === "all") {
-        recipesToShow = allRecipes;
-      } else if (currentTab === "saved") {
-        recipesToShow = allRecipes.filter(recipe => savedIds.includes(recipe.id));
-      } else if (currentTab === "mine") {
-        recipesToShow = myRecipes;
-      }
-
-      if (recipesToShow.length === 0) {
-        if (currentTab === "saved") {
-          content.innerHTML = '<div class="empty">아직 저장한 레시피가 없습니다.</div>';
-        } else if (currentTab === "mine") {
-          content.innerHTML = '<div class="empty">아직 올린 레시피가 없습니다. 첫 레시피를 올려보세요.</div>';
-        } else {
-          content.innerHTML = '<div class="empty">표시할 레시피가 없습니다.</div>';
-        }
-        return;
-      }
-
-      content.innerHTML = `
-        <div class="section-title">${
-          currentTab === "all" ? "모두의 레시피" :
-          currentTab === "saved" ? "저장한 레시피" :
-          "내가 올린 레시피"
-        }</div>
-        <div class="grid">
-          ${recipesToShow.map(recipe => `
-            <div class="card">
-              <h3>${recipe.title}</h3>
-              <div class="meta">${recipe.time} · ${recipe.serving} · ${recipe.author}</div>
-              <div class="desc">${recipe.summary}</div>
-              <div>
-                ${recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join("")}
-              </div>
-              <div class="review">리뷰: “${recipe.review || "아직 리뷰가 없습니다."}”</div>
-              <div class="card-actions">
-                <button class="save-btn ${savedIds.includes(recipe.id) ? "saved" : ""}" onclick="toggleSave(${recipe.id})">
-                  ${savedIds.includes(recipe.id) ? "저장됨" : "저장하기"}
-                </button>
-                <button class="detail-btn" onclick="openDetail(${recipe.id})">자세히 보기</button>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      `;
-    }
-
-    function toggleSave(id) {
-      if (savedIds.includes(id)) {
-        savedIds = savedIds.filter(savedId => savedId !== id);
-      } else {
-        savedIds.push(id);
-      }
-      saveLocal();
-      renderRecipes();
-    }
-
-    function openDetail(id) {
-      const recipe = getAllRecipes().find(item => item.id === id);
-      if (!recipe) return;
-
-      document.getElementById("detailTitle").textContent = recipe.title;
-      document.getElementById("detailMeta").textContent = `${recipe.time} · ${recipe.serving} · ${recipe.author}`;
-      document.getElementById("detailSummary").textContent = recipe.summary;
-
-      document.getElementById("detailIngredients").innerHTML =
-        recipe.ingredients.map(item => `<li>${item}</li>`).join("");
-
-      document.getElementById("detailSteps").innerHTML =
-        recipe.steps.map(item => `<li>${item}</li>`).join("");
-
-      detailModal.style.display = "flex";
-    }
-
-    function closeDetail() {
-      detailModal.style.display = "none";
-    }
-
-    function openUpload() {
-      uploadModal.style.display = "flex";
-    }
-
-    function closeUpload() {
-      uploadModal.style.display = "none";
-    }
-
-    function submitRecipe() {
-      const title = document.getElementById("title").value.trim();
-      const summary = document.getElementById("summary").value.trim();
-      const time = document.getElementById("time").value.trim();
-      const serving = document.getElementById("serving").value.trim();
-      const tags = document.getElementById("tags").value.trim();
-      const ingredients = document.getElementById("ingredients").value.trim();
-      const steps = document.getElementById("steps").value.trim();
-
-      if (!title || !summary || !time || !serving || !ingredients || !steps) {
-        alert("필수 항목을 입력해 주세요.");
-        return;
-      }
-
-      const newRecipe = {
-        id: Date.now(),
-        title,
-        summary,
-        time,
-        serving,
-        review: "직접 만든 첫 레시피입니다.",
-        tags: tags ? tags.split(",").map(item => item.trim()).filter(Boolean) : ["직접등록"],
-        ingredients: ingredients.split(",").map(item => item.trim()).filter(Boolean),
-        steps: steps.split(/[0-9]+\./).map(item => item.trim()).filter(Boolean).length > 0
-          ? steps.split(/[0-9]+\./).map(item => item.trim()).filter(Boolean)
-          : steps.split("\n").map(item => item.trim()).filter(Boolean),
-        author: "나",
-        mine: true
-      };
-
-      myRecipes.unshift(newRecipe);
-      saveLocal();
-
-      document.getElementById("title").value = "";
-      document.getElementById("summary").value = "";
-      document.getElementById("time").value = "";
-      document.getElementById("serving").value = "";
-      document.getElementById("tags").value = "";
-      document.getElementById("ingredients").value = "";
-      document.getElementById("steps").value = "";
-
-      closeUpload();
-      currentTab = "mine";
-      updateTabs();
-      renderRecipes();
-    }
-
-    function updateTabs() {
-      tabButtons.forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === currentTab);
-      });
-    }
-
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        currentTab = btn.dataset.tab;
-        updateTabs();
-        renderRecipes();
-      });
+  let ings=[...document.querySelectorAll("#ingredients input")];
+  for(let i=0;i<ings.length;i++){
+    await supabase.from("recipe_ingredients").insert({
+      recipe_id:id,
+      content:ings[i].value
     });
+  }
 
-    document.getElementById("openUploadBtn").addEventListener("click", openUpload);
-    document.getElementById("goSavedBtn").addEventListener("click", () => {
-      currentTab = "saved";
-      updateTabs();
-      renderRecipes();
+  let steps=[...document.querySelectorAll("#steps input")];
+  for(let i=0;i<steps.length;i++){
+    await supabase.from("recipe_steps").insert({
+      recipe_id:id,
+      content:steps[i].value
     });
-    document.getElementById("closeUploadBtn").addEventListener("click", closeUpload);
-    document.getElementById("submitRecipeBtn").addEventListener("click", submitRecipe);
-    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
+  }
 
-    window.toggleSave = toggleSave;
-    window.openDetail = openDetail;
+  location.reload();
+}
 
-    renderRecipes();
-  </script>
+async function load() {
+  let {data}=await supabase.from("recipes").select("*").order("id",{ascending:false});
+
+  let html="";
+  data.forEach(r=>{
+    html+=`
+    <div class="card">
+      <img src="${r.image_url}">
+      <h3>${r.title}</h3>
+      <p>${r.summary}</p>
+    </div>
+    `;
+  });
+
+  document.getElementById("list").innerHTML=html;
+}
+
+load();
+</script>
+
 </body>
 </html>
