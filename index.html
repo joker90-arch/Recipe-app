@@ -65,6 +65,7 @@
       background: #222;
       color: #fff;
     }
+
     .card {
       background: #fff;
       border-radius: 18px;
@@ -79,8 +80,13 @@
       display: block;
       background: #ebe5de;
     }
-    .card-body { padding: 16px; }
-    .card h3 { margin: 0 0 8px; }
+    .card-body {
+      padding: 16px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
     .meta {
       font-size: 14px;
       color: #666;
@@ -97,12 +103,15 @@
     }
     .badge.mine { background: #ffe7cc; color: #a35700; }
     .badge.saved { background: #e8f4ea; color: #24663c; }
-    .card-actions, .actions {
+
+    .card-actions,
+    .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 12px;
     }
+
     .empty {
       background: #fff;
       border-radius: 18px;
@@ -110,6 +119,7 @@
       text-align: center;
       color: #777;
     }
+
     .modal-bg {
       position: fixed;
       inset: 0;
@@ -119,6 +129,9 @@
       justify-content: center;
       padding: 16px;
       z-index: 9999;
+    }
+    .modal-bg.show {
+      display: flex;
     }
     .modal-box {
       background: #fff;
@@ -130,6 +143,7 @@
       padding: 20px;
       box-shadow: 0 12px 30px rgba(0,0,0,0.18);
     }
+
     .field {
       margin-bottom: 14px;
     }
@@ -156,6 +170,7 @@
       grid-template-columns: 1fr auto;
       gap: 8px;
       margin-bottom: 8px;
+      align-items: center;
     }
     .preview {
       width: 100%;
@@ -166,6 +181,10 @@
       margin-top: 10px;
       background: #ebe5de;
     }
+    .preview.show {
+      display: block;
+    }
+
     .detail-block {
       background: #f8f3ee;
       border-radius: 14px;
@@ -175,11 +194,13 @@
     .detail-block h4 {
       margin: 0 0 8px;
     }
-    .detail-block ul, .detail-block ol {
+    .detail-block ul,
+    .detail-block ol {
       margin: 0;
       padding-left: 20px;
       line-height: 1.8;
     }
+
     .review-item {
       background: #fff;
       border-radius: 12px;
@@ -192,6 +213,7 @@
       font-weight: 700;
       margin-bottom: 6px;
     }
+
     .error-box {
       margin-top: 12px;
       background: #fff3f3;
@@ -204,6 +226,9 @@
       font-size: 13px;
       line-height: 1.5;
     }
+    .error-box.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -211,7 +236,7 @@
     <div class="hero">
       <h1>우리의 레시피</h1>
       <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장하고, 리뷰를 남기는 공간</p>
-      <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
+      <button class="btn btn-primary" id="openCreateBtn">레시피 올리기</button>
     </div>
 
     <div class="tabs">
@@ -223,8 +248,8 @@
     <div id="list"></div>
   </div>
 
-  <!-- 등록 모달 -->
-  <div class="modal-bg" id="modal">
+  <!-- 생성 모달 -->
+  <div class="modal-bg" id="createModal">
     <div class="modal-box">
       <h2>레시피 등록</h2>
 
@@ -252,7 +277,7 @@
       <div class="field">
         <label>재료</label>
         <div id="ingredients"></div>
-        <button type="button" class="btn btn-secondary" id="addIngBtn">+ 재료 추가</button>
+        <button type="button" class="btn btn-secondary" id="addIngredientBtn">+ 재료 추가</button>
       </div>
 
       <div class="field">
@@ -261,11 +286,11 @@
         <button type="button" class="btn btn-secondary" id="addStepBtn">+ 순서 추가</button>
       </div>
 
-      <div id="uploadError" class="error-box"></div>
+      <div id="createError" class="error-box"></div>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" id="submitBtn">등록</button>
-        <button type="button" class="btn btn-secondary" id="closeBtn">닫기</button>
+        <button type="button" class="btn btn-primary" id="submitCreateBtn">등록</button>
+        <button type="button" class="btn btn-secondary" id="closeCreateBtn">닫기</button>
       </div>
     </div>
   </div>
@@ -294,7 +319,7 @@
       <div class="field">
         <label>재료</label>
         <div id="editIngredients"></div>
-        <button type="button" class="btn btn-secondary" id="editAddIngBtn">+ 재료 추가</button>
+        <button type="button" class="btn btn-secondary" id="editAddIngredientBtn">+ 재료 추가</button>
       </div>
 
       <div class="field">
@@ -306,7 +331,7 @@
       <div id="editError" class="error-box"></div>
 
       <div class="actions">
-        <button type="button" class="btn btn-primary" id="saveEditBtn">수정 저장</button>
+        <button type="button" class="btn btn-primary" id="submitEditBtn">수정 저장</button>
         <button type="button" class="btn btn-secondary" id="closeEditBtn">닫기</button>
       </div>
     </div>
@@ -317,7 +342,7 @@
     <div class="modal-box">
       <h2 id="detailTitle"></h2>
       <div class="meta" id="detailMeta"></div>
-      <img id="detailImage" class="preview" style="display:none; margin-top:0;" />
+      <img id="detailImage" class="preview" />
       <div id="detailSummary" style="margin-top:12px; line-height:1.7;"></div>
 
       <div class="detail-block">
@@ -368,66 +393,23 @@
   </div>
 
   <script>
-    async function adminDeleteRecipe(recipeId) {
-  const token = prompt("관리자 삭제 비밀번호를 입력하세요");
-  if (!token) return;
+    const SUPABASE_URL = "https://xfqvnpjkbfspuqmvgqnj.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const ok = confirm("관리자 권한으로 이 레시피를 삭제할까요?");
-  if (!ok) return;
+    const state = {
+      currentTab: "all",
+      recipes: [],
+      currentDetailRecipeId: null,
+      currentEditRecipeId: null
+    };
 
-  try {
-    const response = await fetch("/api/admin-delete", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        recipeId,
-        token
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      alert(result.error || "관리자 삭제 실패");
-      return;
-    }
-
-    alert("관리자 삭제 완료");
-    await loadRecipes();
-  } catch (e) {
-    console.error(e);
-    alert("관리자 삭제 중 오류가 발생했습니다.");
-  }
-}
-    .btn-danger {
-  background: #d94b4b;
-  color: #fff;
-}
-    <button class="btn btn-danger" onclick="adminDeleteRecipe(${r.id})">관리자 삭제</button>
-    window.adminDeleteRecipe = adminDeleteRecipe;
-    const supabaseClient = window.supabase.createClient(
-      "https://xfqvnpjkbfspuqmvgqnj.supabase.co",
-      "sb_publishable_n_C4S5gwta5c6vARXaYZXw_tsKCTwnD"
-    );
-
-    const listEl = document.getElementById("list");
-    const modal = document.getElementById("modal");
+    const createModal = document.getElementById("createModal");
     const editModal = document.getElementById("editModal");
     const detailModal = document.getElementById("detailModal");
-    const previewEl = document.getElementById("preview");
-    const editPreviewEl = document.getElementById("editPreview");
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const uploadErrorEl = document.getElementById("uploadError");
-    const editErrorEl = document.getElementById("editError");
+    const listEl = document.getElementById("list");
 
-    let currentTab = "all";
-    let allRecipes = [];
-    let currentDetailRecipeId = null;
-    let currentEditRecipeId = null;
-
-    function getOrCreateDeviceId() {
+    function getDeviceId() {
       let id = localStorage.getItem("our_recipe_device_id");
       if (!id) {
         id = "device_" + crypto.randomUUID();
@@ -436,20 +418,22 @@
       return id;
     }
 
-    const deviceId = getOrCreateDeviceId();
+    const deviceId = getDeviceId();
 
     function getMyAuthorName() {
       return localStorage.getItem("our_recipe_author_name") || "";
     }
 
-    function setUploadError(message) {
-      uploadErrorEl.style.display = message ? "block" : "none";
-      uploadErrorEl.textContent = message || "";
+    function setMyAuthorName(name) {
+      localStorage.setItem("our_recipe_author_name", name);
     }
 
-    function setEditError(message) {
-      editErrorEl.style.display = message ? "block" : "none";
-      editErrorEl.textContent = message || "";
+    function showModal(el) {
+      el.classList.add("show");
+    }
+
+    function hideModal(el) {
+      el.classList.remove("show");
     }
 
     function escapeHtml(text) {
@@ -462,80 +446,57 @@
     }
 
     function starText(n) {
-      return "★".repeat(n) + "☆".repeat(5 - n);
+      const num = Number(n || 0);
+      return "★".repeat(num) + "☆".repeat(5 - num);
     }
 
-    function openUpload() {
+    function setError(id, message) {
+      const el = document.getElementById(id);
+      if (!message) {
+        el.classList.remove("show");
+        el.textContent = "";
+        return;
+      }
+      el.classList.add("show");
+      el.textContent = message;
+    }
+
+    function clearCreateForm() {
       document.getElementById("authorName").value = getMyAuthorName();
-      setUploadError("");
-      modal.style.display = "flex";
+      document.getElementById("title").value = "";
+      document.getElementById("summary").value = "";
+      document.getElementById("image").value = "";
+      const preview = document.getElementById("preview");
+      preview.src = "";
+      preview.classList.remove("show");
+      document.getElementById("ingredients").innerHTML = "";
+      document.getElementById("steps").innerHTML = "";
+      addDynamicField("ingredients");
+      addDynamicField("steps");
+      setError("createError", "");
     }
 
-    function closeUpload() {
-      modal.style.display = "none";
-    }
-
-    function closeEdit() {
-      editModal.style.display = "none";
-      currentEditRecipeId = null;
-    }
-
-    function closeDetail() {
-      detailModal.style.display = "none";
-      currentDetailRecipeId = null;
-    }
-
-    function addField(containerId, value = "") {
+    function addDynamicField(containerId, value = "") {
       const row = document.createElement("div");
       row.className = "list-row";
       row.innerHTML = `
-        <input placeholder="입력" value="${escapeHtml(value)}">
+        <input type="text" value="${escapeHtml(value)}" placeholder="입력" />
         <button type="button" class="btn btn-secondary">삭제</button>
       `;
-      row.querySelector("button").onclick = () => row.remove();
+      row.querySelector("button").addEventListener("click", () => row.remove());
       document.getElementById(containerId).appendChild(row);
     }
 
-    function addIng(value = "") { addField("ingredients", value); }
-    function addStep(value = "") { addField("steps", value); }
-    function addEditIng(value = "") { addField("editIngredients", value); }
-    function addEditStep(value = "") { addField("editSteps", value); }
-
-    document.getElementById("openUploadBtn").addEventListener("click", openUpload);
-    document.getElementById("closeBtn").addEventListener("click", closeUpload);
-    document.getElementById("closeEditBtn").addEventListener("click", closeEdit);
-    document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
-    document.getElementById("addIngBtn").addEventListener("click", () => addIng());
-    document.getElementById("addStepBtn").addEventListener("click", () => addStep());
-    document.getElementById("editAddIngBtn").addEventListener("click", () => addEditIng());
-    document.getElementById("editAddStepBtn").addEventListener("click", () => addEditStep());
-
-    document.getElementById("image").addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function() {
-        previewEl.src = reader.result;
-        previewEl.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    });
-
-    document.getElementById("editImage").addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function() {
-        editPreviewEl.src = reader.result;
-        editPreviewEl.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    });
+    function collectFieldValues(containerId) {
+      return [...document.querySelectorAll(`#${containerId} input`)]
+        .map(v => v.value.trim())
+        .filter(Boolean);
+    }
 
     async function uploadImage(file) {
       const safeName = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
-      const { error: uploadError } = await supabaseClient
+      const { error } = await supabaseClient
         .storage
         .from("recipe-images")
         .upload(safeName, file, {
@@ -543,7 +504,7 @@
           contentType: file.type || "image/jpeg"
         });
 
-      if (uploadError) throw uploadError;
+      if (error) throw error;
 
       const { data } = supabaseClient
         .storage
@@ -553,27 +514,273 @@
       return data.publicUrl;
     }
 
-    async function submitRecipe() {
+    function getRecipeById(id) {
+      return state.recipes.find(r => r.id === id);
+    }
+
+    async function loadRecipes() {
+      const { data: recipes, error } = await supabaseClient
+        .from("recipes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        listEl.innerHTML = `<div class="empty">레시피를 불러오지 못했습니다.</div>`;
+        return;
+      }
+
+      const ids = (recipes || []).map(r => r.id);
+
+      const ingredientsMap = {};
+      const stepsMap = {};
+      const savedSet = new Set();
+      const ratingMap = {};
+
+      if (ids.length) {
+        const { data: ingredients } = await supabaseClient
+          .from("recipe_ingredients")
+          .select("*")
+          .in("recipe_id", ids)
+          .order("sort_order", { ascending: true });
+
+        const { data: steps } = await supabaseClient
+          .from("recipe_steps")
+          .select("*")
+          .in("recipe_id", ids)
+          .order("sort_order", { ascending: true });
+
+        const { data: saves } = await supabaseClient
+          .from("saved_recipes")
+          .select("recipe_id")
+          .eq("device_id", deviceId);
+
+        const { data: reviews } = await supabaseClient
+          .from("reviews")
+          .select("recipe_id, rating")
+          .in("recipe_id", ids);
+
+        (ingredients || []).forEach(v => {
+          if (!ingredientsMap[v.recipe_id]) ingredientsMap[v.recipe_id] = [];
+          ingredientsMap[v.recipe_id].push(v.content);
+        });
+
+        (steps || []).forEach(v => {
+          if (!stepsMap[v.recipe_id]) stepsMap[v.recipe_id] = [];
+          stepsMap[v.recipe_id].push(v.content);
+        });
+
+        (saves || []).forEach(v => savedSet.add(v.recipe_id));
+
+        (reviews || []).forEach(v => {
+          if (!ratingMap[v.recipe_id]) ratingMap[v.recipe_id] = [];
+          ratingMap[v.recipe_id].push(Number(v.rating || 0));
+        });
+      }
+
+      state.recipes = (recipes || []).map(r => {
+        const ratingArr = ratingMap[r.id] || [];
+        const avg = ratingArr.length
+          ? ratingArr.reduce((a, b) => a + b, 0) / ratingArr.length
+          : 0;
+
+        return {
+          ...r,
+          ingredients: ingredientsMap[r.id] || [],
+          steps: stepsMap[r.id] || [],
+          isSaved: savedSet.has(r.id),
+          isMine: r.owner_device_id === deviceId,
+          avgRating: avg
+        };
+      });
+
+      renderRecipes();
+    }
+
+    function getFilteredRecipes() {
+      if (state.currentTab === "mine") {
+        return state.recipes.filter(r => r.owner_device_id === deviceId);
+      }
+      if (state.currentTab === "saved") {
+        return state.recipes.filter(r => r.isSaved);
+      }
+      return state.recipes;
+    }
+
+    function renderRecipes() {
+      const data = getFilteredRecipes();
+
+      if (!data.length) {
+        let message = "등록된 레시피가 없습니다.";
+        if (state.currentTab === "mine") message = "내가 올린 레시피가 없습니다.";
+        if (state.currentTab === "saved") message = "저장한 레시피가 없습니다.";
+        listEl.innerHTML = `<div class="empty">${message}</div>`;
+        return;
+      }
+
+      listEl.innerHTML = data.map(r => `
+        <div class="card">
+          ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
+          <div class="card-body">
+            ${r.isMine ? `<span class="badge mine">내 레시피</span>` : ""}
+            ${r.isSaved ? `<span class="badge saved">저장됨</span>` : ""}
+            <h3>${escapeHtml(r.title || "")}</h3>
+            <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")} · 평균 별점 ${Number(r.avgRating || 0).toFixed(1)}</div>
+            <p>${escapeHtml(r.summary || "")}</p>
+            <div class="card-actions">
+              <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" data-action="save" data-id="${r.id}">
+                ${r.isSaved ? "저장 해제" : "저장하기"}
+              </button>
+              <button class="btn btn-secondary" data-action="detail" data-id="${r.id}">자세히 보기</button>
+              ${r.isMine ? `<button class="btn btn-secondary" data-action="edit" data-id="${r.id}">수정</button>` : ""}
+              ${r.isMine ? `<button class="btn btn-danger" data-action="delete" data-id="${r.id}">삭제</button>` : ""}
+              <button class="btn btn-danger" data-action="admin-delete" data-id="${r.id}">관리자 삭제</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function toggleSave(recipeId) {
+      const recipe = getRecipeById(recipeId);
+      if (!recipe) return;
+
+      if (recipe.isSaved) {
+        const { error } = await supabaseClient
+          .from("saved_recipes")
+          .delete()
+          .eq("recipe_id", recipeId)
+          .eq("device_id", deviceId);
+
+        if (error) {
+          alert("저장 해제 오류");
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from("saved_recipes")
+          .insert({
+            recipe_id: recipeId,
+            device_id: deviceId
+          });
+
+        if (error) {
+          alert("저장 오류");
+          return;
+        }
+      }
+
+      await loadRecipes();
+    }
+
+    async function openDetail(recipeId) {
+      const recipe = getRecipeById(recipeId);
+      if (!recipe) return;
+
+      state.currentDetailRecipeId = recipeId;
+
+      document.getElementById("detailTitle").textContent = recipe.title || "";
+      document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
+      document.getElementById("detailSummary").textContent = recipe.summary || "";
+
+      const img = document.getElementById("detailImage");
+      if (recipe.image_url) {
+        img.src = recipe.image_url;
+        img.classList.add("show");
+      } else {
+        img.src = "";
+        img.classList.remove("show");
+      }
+
+      document.getElementById("detailIngredients").innerHTML =
+        (recipe.ingredients || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      document.getElementById("detailSteps").innerHTML =
+        (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
+
+      document.getElementById("reviewAuthor").value = getMyAuthorName();
+      document.getElementById("reviewRating").value = "5";
+      document.getElementById("reviewComment").value = "";
+
+      await loadReviews(recipeId);
+      showModal(detailModal);
+    }
+
+    async function loadReviews(recipeId) {
+      const box = document.getElementById("reviewList");
+      const { data, error } = await supabaseClient
+        .from("reviews")
+        .select("*")
+        .eq("recipe_id", recipeId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        box.innerHTML = `<div class="review-item">리뷰를 불러오지 못했습니다.</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        box.innerHTML = `<div class="review-item">아직 리뷰가 없습니다.</div>`;
+        return;
+      }
+
+      box.innerHTML = data.map(r => `
+        <div class="review-item">
+          <div class="stars">${starText(r.rating || 0)}</div>
+          <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
+          <div>${escapeHtml(r.comment || "")}</div>
+        </div>
+      `).join("");
+    }
+
+    async function submitReview() {
       try {
-        setUploadError("");
+        if (!state.currentDetailRecipeId) return;
+
+        const authorName = document.getElementById("reviewAuthor").value.trim() || "익명";
+        const rating = parseInt(document.getElementById("reviewRating").value, 10);
+        const comment = document.getElementById("reviewComment").value.trim();
+
+        setMyAuthorName(authorName);
+
+        const { error } = await supabaseClient
+          .from("reviews")
+          .insert({
+            recipe_id: state.currentDetailRecipeId,
+            author_name: authorName,
+            rating,
+            comment
+          });
+
+        if (error) throw error;
+
+        document.getElementById("reviewComment").value = "";
+        document.getElementById("reviewRating").value = "5";
+
+        await loadReviews(state.currentDetailRecipeId);
+        await loadRecipes();
+      } catch (e) {
+        console.error(e);
+        alert("리뷰 등록 오류");
+      }
+    }
+
+    async function createRecipe() {
+      try {
+        setError("createError", "");
 
         const authorName = document.getElementById("authorName").value.trim() || "익명";
         const title = document.getElementById("title").value.trim();
         const summary = document.getElementById("summary").value.trim();
         const file = document.getElementById("image").files[0];
+        const ingredients = collectFieldValues("ingredients");
+        const steps = collectFieldValues("steps");
 
-        const ingredients = [...document.querySelectorAll("#ingredients input")]
-          .map(v => v.value.trim()).filter(Boolean);
+        if (!title) return setError("createError", "제목을 입력해 주세요.");
+        if (!file) return setError("createError", "사진을 선택해 주세요.");
+        if (!ingredients.length) return setError("createError", "재료를 1개 이상 입력해 주세요.");
+        if (!steps.length) return setError("createError", "요리 순서를 1개 이상 입력해 주세요.");
 
-        const steps = [...document.querySelectorAll("#steps input")]
-          .map(v => v.value.trim()).filter(Boolean);
-
-        if (!title) return setUploadError("제목을 입력해 주세요.");
-        if (!file) return setUploadError("사진을 선택해 주세요.");
-        if (!ingredients.length) return setUploadError("재료를 1개 이상 입력해 주세요.");
-        if (!steps.length) return setUploadError("요리 순서를 1개 이상 입력해 주세요.");
-
-        localStorage.setItem("our_recipe_author_name", authorName);
+        setMyAuthorName(authorName);
 
         const imageUrl = await uploadImage(file);
 
@@ -609,195 +816,68 @@
         const { error: stepError } = await supabaseClient.from("recipe_steps").insert(stepRows);
         if (stepError) throw stepError;
 
-        alert("등록 완료");
-        location.reload();
-      } catch (e) {
-        console.error(e);
-        setUploadError(
-          "등록 중 오류가 발생했습니다.\n\n" +
-          (e?.message || "") +
-          (e?.details ? "\n" + e.details : "")
-        );
-      }
-    }
-
-    async function openDetail(recipeId) {
-      const recipe = allRecipes.find(r => r.id === recipeId);
-      if (!recipe) return;
-
-      currentDetailRecipeId = recipeId;
-
-      document.getElementById("detailTitle").textContent = recipe.title || "";
-      document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
-      document.getElementById("detailSummary").textContent = recipe.summary || "";
-      document.getElementById("reviewAuthor").value = getMyAuthorName();
-      document.getElementById("reviewRating").value = "5";
-      document.getElementById("reviewComment").value = "";
-
-      const detailImage = document.getElementById("detailImage");
-      if (recipe.image_url) {
-        detailImage.src = recipe.image_url;
-        detailImage.style.display = "block";
-      } else {
-        detailImage.style.display = "none";
-      }
-
-      document.getElementById("detailIngredients").innerHTML =
-        (recipe.ingredients || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
-
-      document.getElementById("detailSteps").innerHTML =
-        (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
-
-      await loadReviews(recipeId);
-      detailModal.style.display = "flex";
-    }
-
-    async function submitReview() {
-      try {
-        if (!currentDetailRecipeId) return;
-
-        const authorName = document.getElementById("reviewAuthor").value.trim() || "익명";
-        const rating = parseInt(document.getElementById("reviewRating").value, 10);
-        const comment = document.getElementById("reviewComment").value.trim();
-
-        localStorage.setItem("our_recipe_author_name", authorName);
-
-        const { error } = await supabaseClient
-          .from("reviews")
-          .insert({
-            recipe_id: currentDetailRecipeId,
-            author_name: authorName,
-            rating,
-            comment
-          });
-
-        if (error) throw error;
-
-        document.getElementById("reviewComment").value = "";
-        document.getElementById("reviewRating").value = "5";
-
-        await loadReviews(currentDetailRecipeId);
+        hideModal(createModal);
+        clearCreateForm();
         await loadRecipes();
       } catch (e) {
         console.error(e);
-        alert("리뷰 등록 오류");
+        setError("createError", "등록 중 오류가 발생했습니다.\n\n" + (e?.message || ""));
       }
     }
 
-    async function loadReviews(recipeId) {
-      const reviewListEl = document.getElementById("reviewList");
-
-      const { data, error } = await supabaseClient
-        .from("reviews")
-        .select("*")
-        .eq("recipe_id", recipeId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        reviewListEl.innerHTML = `<div class="review-item">리뷰를 불러오지 못했습니다.</div>`;
-        return;
-      }
-
-      if (!data || !data.length) {
-        reviewListEl.innerHTML = `<div class="review-item">아직 리뷰가 없습니다.</div>`;
-        return;
-      }
-
-      reviewListEl.innerHTML = data.map(r => `
-        <div class="review-item">
-          <div class="stars">${starText(r.rating || 0)}</div>
-          <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
-          <div>${escapeHtml(r.comment || "")}</div>
-        </div>
-      `).join("");
-    }
-
-    async function toggleSave(recipeId) {
-      const recipe = allRecipes.find(r => r.id === recipeId);
-      if (!recipe) return;
-
-      if (recipe.isSaved) {
-        const { error } = await supabaseClient
-          .from("saved_recipes")
-          .delete()
-          .eq("recipe_id", recipeId)
-          .eq("device_id", deviceId);
-
-        if (error) {
-          console.error(error);
-          alert("저장 해제 오류");
-          return;
-        }
-      } else {
-        const { error } = await supabaseClient
-          .from("saved_recipes")
-          .insert({
-            recipe_id: recipeId,
-            device_id: deviceId
-          });
-
-        if (error) {
-          console.error(error);
-          alert("저장 오류");
-          return;
-        }
-      }
-
-      await loadRecipes();
-    }
-
-    async function openEdit(recipeId) {
-      const recipe = allRecipes.find(r => r.id === recipeId);
+    function openEdit(recipeId) {
+      const recipe = getRecipeById(recipeId);
       if (!recipe || recipe.owner_device_id !== deviceId) {
         alert("수정 권한이 없습니다.");
         return;
       }
 
-      currentEditRecipeId = recipeId;
-      setEditError("");
+      state.currentEditRecipeId = recipeId;
+      setError("editError", "");
 
       document.getElementById("editTitle").value = recipe.title || "";
       document.getElementById("editSummary").value = recipe.summary || "";
+
       document.getElementById("editImage").value = "";
-      editPreviewEl.src = recipe.image_url || "";
-      editPreviewEl.style.display = recipe.image_url ? "block" : "none";
+      const preview = document.getElementById("editPreview");
+      if (recipe.image_url) {
+        preview.src = recipe.image_url;
+        preview.classList.add("show");
+      } else {
+        preview.src = "";
+        preview.classList.remove("show");
+      }
 
-      const ingBox = document.getElementById("editIngredients");
-      const stepBox = document.getElementById("editSteps");
-      ingBox.innerHTML = "";
-      stepBox.innerHTML = "";
+      document.getElementById("editIngredients").innerHTML = "";
+      document.getElementById("editSteps").innerHTML = "";
 
-      (recipe.ingredients || []).forEach(v => addEditIng(v));
-      (recipe.steps || []).forEach(v => addEditStep(v));
+      (recipe.ingredients || []).forEach(v => addDynamicField("editIngredients", v));
+      (recipe.steps || []).forEach(v => addDynamicField("editSteps", v));
 
-      if (!(recipe.ingredients || []).length) addEditIng();
-      if (!(recipe.steps || []).length) addEditStep();
+      if (!(recipe.ingredients || []).length) addDynamicField("editIngredients");
+      if (!(recipe.steps || []).length) addDynamicField("editSteps");
 
-      editModal.style.display = "flex";
+      showModal(editModal);
     }
 
     async function saveEdit() {
       try {
-        if (!currentEditRecipeId) return;
+        setError("editError", "");
 
-        const recipe = allRecipes.find(r => r.id === currentEditRecipeId);
+        const recipe = getRecipeById(state.currentEditRecipeId);
         if (!recipe || recipe.owner_device_id !== deviceId) {
-          return setEditError("수정 권한이 없습니다.");
+          return setError("editError", "수정 권한이 없습니다.");
         }
 
         const title = document.getElementById("editTitle").value.trim();
         const summary = document.getElementById("editSummary").value.trim();
         const newFile = document.getElementById("editImage").files[0];
+        const ingredients = collectFieldValues("editIngredients");
+        const steps = collectFieldValues("editSteps");
 
-        const ingredients = [...document.querySelectorAll("#editIngredients input")]
-          .map(v => v.value.trim()).filter(Boolean);
-
-        const steps = [...document.querySelectorAll("#editSteps input")]
-          .map(v => v.value.trim()).filter(Boolean);
-
-        if (!title) return setEditError("제목을 입력해 주세요.");
-        if (!ingredients.length) return setEditError("재료를 1개 이상 입력해 주세요.");
-        if (!steps.length) return setEditError("요리 순서를 1개 이상 입력해 주세요.");
+        if (!title) return setError("editError", "제목을 입력해 주세요.");
+        if (!ingredients.length) return setError("editError", "재료를 1개 이상 입력해 주세요.");
+        if (!steps.length) return setError("editError", "요리 순서를 1개 이상 입력해 주세요.");
 
         let imageUrl = recipe.image_url;
         if (newFile) {
@@ -811,32 +891,33 @@
             summary,
             image_url: imageUrl
           })
-          .eq("id", currentEditRecipeId);
+          .eq("id", recipe.id)
+          .eq("owner_device_id", deviceId);
 
         if (updateError) throw updateError;
 
         const { error: delIngError } = await supabaseClient
           .from("recipe_ingredients")
           .delete()
-          .eq("recipe_id", currentEditRecipeId);
+          .eq("recipe_id", recipe.id);
 
         if (delIngError) throw delIngError;
 
         const { error: delStepError } = await supabaseClient
           .from("recipe_steps")
           .delete()
-          .eq("recipe_id", currentEditRecipeId);
+          .eq("recipe_id", recipe.id);
 
         if (delStepError) throw delStepError;
 
         const ingredientRows = ingredients.map((content, idx) => ({
-          recipe_id: currentEditRecipeId,
+          recipe_id: recipe.id,
           content,
           sort_order: idx + 1
         }));
 
         const stepRows = steps.map((content, idx) => ({
-          recipe_id: currentEditRecipeId,
+          recipe_id: recipe.id,
           content,
           sort_order: idx + 1
         }));
@@ -847,17 +928,16 @@
         const { error: stepError } = await supabaseClient.from("recipe_steps").insert(stepRows);
         if (stepError) throw stepError;
 
-        alert("수정 완료");
-        closeEdit();
+        hideModal(editModal);
         await loadRecipes();
       } catch (e) {
         console.error(e);
-        setEditError("수정 중 오류가 발생했습니다.\n\n" + (e?.message || ""));
+        setError("editError", "수정 중 오류가 발생했습니다.\n\n" + (e?.message || ""));
       }
     }
 
-    async function deleteRecipe(recipeId) {
-      const recipe = allRecipes.find(r => r.id === recipeId);
+    async function deleteMine(recipeId) {
+      const recipe = getRecipeById(recipeId);
       if (!recipe || recipe.owner_device_id !== deviceId) {
         alert("삭제 권한이 없습니다.");
         return;
@@ -875,11 +955,11 @@
         const { error } = await supabaseClient
           .from("recipes")
           .delete()
-          .eq("id", recipeId);
+          .eq("id", recipeId)
+          .eq("owner_device_id", deviceId);
 
         if (error) throw error;
 
-        alert("삭제 완료");
         await loadRecipes();
       } catch (e) {
         console.error(e);
@@ -887,146 +967,111 @@
       }
     }
 
-    function filterRecipes() {
-      if (currentTab === "mine") {
-        return allRecipes.filter(r => r.owner_device_id === deviceId);
+    async function adminDeleteRecipe(recipeId) {
+      const token = prompt("관리자 삭제 비밀번호를 입력하세요");
+      if (!token) return;
+
+      const ok = confirm("관리자 권한으로 이 레시피를 삭제할까요?");
+      if (!ok) return;
+
+      try {
+        const response = await fetch("/api/admin-delete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ recipeId, token })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.error || "관리자 삭제 실패");
+          return;
+        }
+
+        alert("관리자 삭제 완료");
+        await loadRecipes();
+      } catch (e) {
+        console.error(e);
+        alert("관리자 삭제 중 오류가 발생했습니다.");
       }
-      if (currentTab === "saved") {
-        return allRecipes.filter(r => r.isSaved);
-      }
-      return allRecipes;
     }
 
-    function renderRecipes() {
-      const data = filterRecipes();
+    document.getElementById("openCreateBtn").addEventListener("click", () => {
+      clearCreateForm();
+      showModal(createModal);
+    });
 
-      if (!data.length) {
-        let message = "등록된 레시피가 없습니다.";
-        if (currentTab === "mine") message = "내가 올린 레시피가 없습니다.";
-        if (currentTab === "saved") message = "저장한 레시피가 없습니다.";
-        listEl.innerHTML = `<div class="empty">${message}</div>`;
+    document.getElementById("closeCreateBtn").addEventListener("click", () => hideModal(createModal));
+    document.getElementById("submitCreateBtn").addEventListener("click", createRecipe);
+
+    document.getElementById("closeEditBtn").addEventListener("click", () => hideModal(editModal));
+    document.getElementById("submitEditBtn").addEventListener("click", saveEdit);
+
+    document.getElementById("closeDetailBtn").addEventListener("click", () => hideModal(detailModal));
+    document.getElementById("submitReviewBtn").addEventListener("click", submitReview);
+
+    document.getElementById("addIngredientBtn").addEventListener("click", () => addDynamicField("ingredients"));
+    document.getElementById("addStepBtn").addEventListener("click", () => addDynamicField("steps"));
+
+    document.getElementById("editAddIngredientBtn").addEventListener("click", () => addDynamicField("editIngredients"));
+    document.getElementById("editAddStepBtn").addEventListener("click", () => addDynamicField("editSteps"));
+
+    document.getElementById("image").addEventListener("change", e => {
+      const file = e.target.files[0];
+      const preview = document.getElementById("preview");
+      if (!file) {
+        preview.src = "";
+        preview.classList.remove("show");
         return;
       }
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.classList.add("show");
+      };
+      reader.readAsDataURL(file);
+    });
 
-      listEl.innerHTML = data.map(r => `
-        <div class="card">
-          ${r.image_url ? `<img src="${r.image_url}" alt="">` : ""}
-          <div class="card-body">
-            ${r.owner_device_id === deviceId ? `<span class="badge mine">내 레시피</span>` : ``}
-            ${r.isSaved ? `<span class="badge saved">저장됨</span>` : ``}
-            <h3>${escapeHtml(r.title || "")}</h3>
-            <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")} · 평균 별점 ${Number(r.avg_rating || 0).toFixed(1)}</div>
-            <p>${escapeHtml(r.summary || "")}</p>
-            <div class="card-actions">
-              <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" onclick="toggleSave(${r.id})">
-                ${r.isSaved ? "저장 해제" : "저장하기"}
-              </button>
-              <button class="btn btn-secondary" onclick="openDetail(${r.id})">자세히 보기</button>
-              ${r.owner_device_id === deviceId ? `<button class="btn btn-secondary" onclick="openEdit(${r.id})">수정</button>` : ``}
-              ${r.owner_device_id === deviceId ? `<button class="btn btn-danger" onclick="deleteRecipe(${r.id})">삭제</button>` : ``}
-            </div>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function loadRecipes() {
-      const { data: recipes, error } = await supabaseClient
-        .from("recipes")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        listEl.innerHTML = `<div class="empty">레시피를 불러오지 못했습니다.</div>`;
+    document.getElementById("editImage").addEventListener("change", e => {
+      const file = e.target.files[0];
+      const preview = document.getElementById("editPreview");
+      if (!file) {
         return;
       }
-
-      const recipeIds = (recipes || []).map(r => r.id);
-
-      let ingredientsMap = {};
-      let stepsMap = {};
-      let savedIds = new Set();
-      let reviewMap = {};
-      let avgMap = {};
-
-      if (recipeIds.length) {
-        const { data: ingredients } = await supabaseClient
-          .from("recipe_ingredients")
-          .select("*")
-          .in("recipe_id", recipeIds)
-          .order("sort_order", { ascending: true });
-
-        const { data: steps } = await supabaseClient
-          .from("recipe_steps")
-          .select("*")
-          .in("recipe_id", recipeIds)
-          .order("sort_order", { ascending: true });
-
-        const { data: saves } = await supabaseClient
-          .from("saved_recipes")
-          .select("recipe_id")
-          .eq("device_id", deviceId);
-
-        const { data: reviews } = await supabaseClient
-          .from("reviews")
-          .select("recipe_id, rating")
-          .in("recipe_id", recipeIds);
-
-        (ingredients || []).forEach(item => {
-          if (!ingredientsMap[item.recipe_id]) ingredientsMap[item.recipe_id] = [];
-          ingredientsMap[item.recipe_id].push(item.content);
-        });
-
-        (steps || []).forEach(item => {
-          if (!stepsMap[item.recipe_id]) stepsMap[item.recipe_id] = [];
-          stepsMap[item.recipe_id].push(item.content);
-        });
-
-        savedIds = new Set((saves || []).map(v => v.recipe_id));
-
-        (reviews || []).forEach(item => {
-          if (!reviewMap[item.recipe_id]) reviewMap[item.recipe_id] = [];
-          reviewMap[item.recipe_id].push(Number(item.rating || 0));
-        });
-
-        Object.keys(reviewMap).forEach(key => {
-          const arr = reviewMap[key];
-          avgMap[key] = arr.reduce((a, b) => a + b, 0) / arr.length;
-        });
-      }
-
-      allRecipes = (recipes || []).map(r => ({
-        ...r,
-        ingredients: ingredientsMap[r.id] || [],
-        steps: stepsMap[r.id] || [],
-        isSaved: savedIds.has(r.id),
-        avg_rating: avgMap[r.id] || 0
-      }));
-
-      renderRecipes();
-    }
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+        preview.classList.add("show");
+      };
+      reader.readAsDataURL(file);
+    });
 
     tabButtons.forEach(btn => {
       btn.addEventListener("click", () => {
-        currentTab = btn.dataset.tab;
+        state.currentTab = btn.dataset.tab;
         tabButtons.forEach(v => v.classList.remove("active"));
         btn.classList.add("active");
         renderRecipes();
       });
     });
 
-    document.getElementById("submitBtn").addEventListener("click", submitRecipe);
-    document.getElementById("submitReviewBtn").addEventListener("click", submitReview);
-    document.getElementById("saveEditBtn").addEventListener("click", saveEdit);
+    listEl.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
 
-    window.toggleSave = toggleSave;
-    window.openDetail = openDetail;
-    window.openEdit = openEdit;
-    window.deleteRecipe = deleteRecipe;
+      const recipeId = Number(btn.dataset.id);
+      const action = btn.dataset.action;
 
-    addIng();
-    addStep();
+      if (action === "save") await toggleSave(recipeId);
+      if (action === "detail") await openDetail(recipeId);
+      if (action === "edit") openEdit(recipeId);
+      if (action === "delete") await deleteMine(recipeId);
+      if (action === "admin-delete") await adminDeleteRecipe(recipeId);
+    });
+
+    clearCreateForm();
     loadRecipes();
   </script>
 </body>
