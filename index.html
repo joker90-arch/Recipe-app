@@ -137,7 +137,7 @@
     .modal-box {
       background: #fff;
       width: 100%;
-      max-width: 680px;
+      max-width: 720px;
       max-height: 90vh;
       overflow-y: auto;
       border-radius: 20px;
@@ -152,7 +152,7 @@
       margin-bottom: 8px;
       font-weight: 700;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -195,11 +195,39 @@
     .detail-block h4 {
       margin: 0 0 8px;
     }
-    .detail-block ul,
-    .detail-block ol {
+    .detail-block ul, .detail-block ol {
       margin: 0;
       padding-left: 20px;
       line-height: 1.8;
+    }
+    .review-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+      border: 1px solid #eee;
+    }
+    .stars {
+      color: #ff8a00;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .error-box {
+      margin-top: 12px;
+      background: #fff3f3;
+      color: #a40000;
+      border: 1px solid #ffc8c8;
+      padding: 10px 12px;
+      border-radius: 12px;
+      display: none;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 800;
     }
   </style>
 </head>
@@ -207,7 +235,7 @@
   <div class="wrap">
     <div class="hero">
       <h1>우리의 레시피</h1>
-      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장해서 모아볼 수 있는 공간</p>
+      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고, 저장하고, 먹어본 후기를 남기는 공간</p>
       <button class="btn btn-primary" id="openUploadBtn">레시피 올리기</button>
     </div>
 
@@ -257,6 +285,8 @@
         <button type="button" class="btn btn-secondary" id="addStepBtn">+ 순서 추가</button>
       </div>
 
+      <div id="uploadError" class="error-box"></div>
+
       <div class="actions">
         <button type="button" class="btn btn-primary" id="submitBtn">등록</button>
         <button type="button" class="btn btn-secondary" id="closeBtn">닫기</button>
@@ -281,8 +311,39 @@
         <ol id="detailSteps"></ol>
       </div>
 
-      <div class="actions">
-        <button type="button" class="btn btn-secondary" id="closeDetailBtn">닫기</button>
+      <div class="detail-block">
+        <h4>리뷰</h4>
+        <div id="reviewList"></div>
+      </div>
+
+      <div class="detail-block">
+        <h4>리뷰 남기기</h4>
+
+        <div class="field">
+          <label for="reviewAuthor">이름</label>
+          <input id="reviewAuthor" placeholder="예: Joker90" />
+        </div>
+
+        <div class="field">
+          <label for="reviewRating">별점</label>
+          <select id="reviewRating">
+            <option value="5">5점</option>
+            <option value="4">4점</option>
+            <option value="3">3점</option>
+            <option value="2">2점</option>
+            <option value="1">1점</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="reviewComment">후기</label>
+          <textarea id="reviewComment" placeholder="예: 생각보다 간단하고 맛있었어요"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" id="submitReviewBtn">리뷰 등록</button>
+          <button type="button" class="btn btn-secondary" id="closeDetailBtn">닫기</button>
+        </div>
       </div>
     </div>
   </div>
@@ -298,9 +359,11 @@
     const detailModal = document.getElementById("detailModal");
     const previewEl = document.getElementById("preview");
     const tabButtons = document.querySelectorAll(".tab-btn");
+    const uploadErrorEl = document.getElementById("uploadError");
 
     let currentTab = "all";
     let allRecipes = [];
+    let currentDetailRecipeId = null;
 
     function getOrCreateDeviceId() {
       let id = localStorage.getItem("our_recipe_device_id");
@@ -317,8 +380,19 @@
       return localStorage.getItem("our_recipe_author_name") || "";
     }
 
+    function setUploadError(message) {
+      if (!message) {
+        uploadErrorEl.style.display = "none";
+        uploadErrorEl.textContent = "";
+        return;
+      }
+      uploadErrorEl.style.display = "block";
+      uploadErrorEl.textContent = message;
+    }
+
     function openUpload() {
       document.getElementById("authorName").value = getMyAuthorName();
+      setUploadError("");
       modal.style.display = "flex";
     }
 
@@ -326,13 +400,18 @@
       modal.style.display = "none";
     }
 
-    function openDetail(recipeId) {
+    async function openDetail(recipeId) {
       const recipe = allRecipes.find(r => r.id === recipeId);
       if (!recipe) return;
+
+      currentDetailRecipeId = recipeId;
 
       document.getElementById("detailTitle").textContent = recipe.title || "";
       document.getElementById("detailMeta").textContent = `작성자: ${recipe.author_name || "익명"}`;
       document.getElementById("detailSummary").textContent = recipe.summary || "";
+      document.getElementById("reviewAuthor").value = getMyAuthorName();
+      document.getElementById("reviewRating").value = "5";
+      document.getElementById("reviewComment").value = "";
 
       const detailImage = document.getElementById("detailImage");
       if (recipe.image_url) {
@@ -348,11 +427,14 @@
       document.getElementById("detailSteps").innerHTML =
         (recipe.steps || []).map(v => `<li>${escapeHtml(v)}</li>`).join("");
 
+      await loadReviews(recipeId);
+
       detailModal.style.display = "flex";
     }
 
     function closeDetail() {
       detailModal.style.display = "none";
+      currentDetailRecipeId = null;
     }
 
     function addIng(value = "") {
@@ -386,6 +468,10 @@
         .replaceAll("'", "&#039;");
     }
 
+    function starText(n) {
+      return "★".repeat(n) + "☆".repeat(5 - n);
+    }
+
     document.getElementById("openUploadBtn").addEventListener("click", openUpload);
     document.getElementById("closeBtn").addEventListener("click", closeUpload);
     document.getElementById("closeDetailBtn").addEventListener("click", closeDetail);
@@ -404,8 +490,31 @@
       reader.readAsDataURL(file);
     });
 
+    async function uploadImage(file) {
+      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from("recipe-images")
+        .upload(safeName, file, {
+          upsert: false,
+          contentType: file.type || "image/jpeg"
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabaseClient
+        .storage
+        .from("recipe-images")
+        .getPublicUrl(safeName);
+
+      return data.publicUrl;
+    }
+
     async function submitRecipe() {
       try {
+        setUploadError("");
+
         const authorName = document.getElementById("authorName").value.trim() || "익명";
         const title = document.getElementById("title").value.trim();
         const summary = document.getElementById("summary").value.trim();
@@ -420,46 +529,28 @@
           .filter(Boolean);
 
         if (!title) {
-          alert("제목을 입력해 주세요.");
+          setUploadError("제목을 입력해 주세요.");
           return;
         }
 
         if (!file) {
-          alert("사진을 선택해 주세요.");
+          setUploadError("사진을 선택해 주세요.");
           return;
         }
 
         if (!ingredients.length) {
-          alert("재료를 1개 이상 입력해 주세요.");
+          setUploadError("재료를 1개 이상 입력해 주세요.");
           return;
         }
 
         if (!steps.length) {
-          alert("요리 순서를 1개 이상 입력해 주세요.");
+          setUploadError("요리 순서를 1개 이상 입력해 주세요.");
           return;
         }
 
         localStorage.setItem("our_recipe_author_name", authorName);
 
-        const fileName = `${Date.now()}_${file.name}`;
-
-        const { error: uploadError } = await supabaseClient
-          .storage
-          .from("recipe-images")
-          .upload(fileName, file, { upsert: false });
-
-        if (uploadError) {
-          console.error(uploadError);
-          alert("이미지 업로드 오류");
-          return;
-        }
-
-        const { data: publicData } = supabaseClient
-          .storage
-          .from("recipe-images")
-          .getPublicUrl(fileName);
-
-        const imageUrl = publicData.publicUrl;
+        const imageUrl = await uploadImage(file);
 
         const { data: recipeRow, error: recipeError } = await supabaseClient
           .from("recipes")
@@ -472,47 +563,102 @@
           .select()
           .single();
 
-        if (recipeError) {
-          console.error(recipeError);
-          alert("레시피 저장 오류");
-          return;
-        }
+        if (recipeError) throw recipeError;
 
-        for (let i = 0; i < ingredients.length; i++) {
-          const { error } = await supabaseClient.from("recipe_ingredients").insert({
-            recipe_id: recipeRow.id,
-            content: ingredients[i],
-            sort_order: i + 1
-          });
-          if (error) {
-            console.error(error);
-            alert("재료 저장 오류");
-            return;
-          }
-        }
+        const ingredientRows = ingredients.map((content, idx) => ({
+          recipe_id: recipeRow.id,
+          content,
+          sort_order: idx + 1
+        }));
 
-        for (let i = 0; i < steps.length; i++) {
-          const { error } = await supabaseClient.from("recipe_steps").insert({
-            recipe_id: recipeRow.id,
-            content: steps[i],
-            sort_order: i + 1
-          });
-          if (error) {
-            console.error(error);
-            alert("순서 저장 오류");
-            return;
-          }
-        }
+        const stepRows = steps.map((content, idx) => ({
+          recipe_id: recipeRow.id,
+          content,
+          sort_order: idx + 1
+        }));
+
+        const { error: ingError } = await supabaseClient.from("recipe_ingredients").insert(ingredientRows);
+        if (ingError) throw ingError;
+
+        const { error: stepError } = await supabaseClient.from("recipe_steps").insert(stepRows);
+        if (stepError) throw stepError;
 
         alert("등록 완료");
         location.reload();
       } catch (e) {
         console.error(e);
-        alert("등록 중 문제가 발생했습니다.");
+        setUploadError(
+          "등록 중 오류가 발생했습니다.\n\n" +
+          (e?.message || "") +
+          (e?.error_description ? "\n" + e.error_description : "") +
+          (e?.details ? "\n" + e.details : "")
+        );
       }
     }
 
     document.getElementById("submitBtn").addEventListener("click", submitRecipe);
+
+    async function submitReview() {
+      try {
+        if (!currentDetailRecipeId) return;
+
+        const authorName = document.getElementById("reviewAuthor").value.trim() || "익명";
+        const rating = parseInt(document.getElementById("reviewRating").value, 10);
+        const comment = document.getElementById("reviewComment").value.trim();
+
+        localStorage.setItem("our_recipe_author_name", authorName);
+
+        const { error } = await supabaseClient
+          .from("reviews")
+          .insert({
+            recipe_id: currentDetailRecipeId,
+            author_name: authorName,
+            rating,
+            comment
+          });
+
+        if (error) throw error;
+
+        document.getElementById("reviewComment").value = "";
+        document.getElementById("reviewRating").value = "5";
+
+        await loadReviews(currentDetailRecipeId);
+        await loadRecipes();
+      } catch (e) {
+        console.error(e);
+        alert("리뷰 등록 오류");
+      }
+    }
+
+    document.getElementById("submitReviewBtn").addEventListener("click", submitReview);
+
+    async function loadReviews(recipeId) {
+      const reviewListEl = document.getElementById("reviewList");
+
+      const { data, error } = await supabaseClient
+        .from("reviews")
+        .select("*")
+        .eq("recipe_id", recipeId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        reviewListEl.innerHTML = `<div class="review-item">리뷰를 불러오지 못했습니다.</div>`;
+        return;
+      }
+
+      if (!data || !data.length) {
+        reviewListEl.innerHTML = `<div class="review-item">아직 리뷰가 없습니다.</div>`;
+        return;
+      }
+
+      reviewListEl.innerHTML = data.map(r => `
+        <div class="review-item">
+          <div class="stars">${starText(r.rating || 0)}</div>
+          <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
+          <div>${escapeHtml(r.comment || "")}</div>
+        </div>
+      `).join("");
+    }
 
     async function toggleSave(recipeId) {
       const recipe = allRecipes.find(r => r.id === recipeId);
@@ -579,7 +725,7 @@
             ${r.isMine ? `<span class="badge mine">내 레시피</span>` : ``}
             ${r.isSaved ? `<span class="badge saved">저장됨</span>` : ``}
             <h3>${escapeHtml(r.title || "")}</h3>
-            <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
+            <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")} · 평균 별점 ${Number(r.avg_rating || 0).toFixed(1)}</div>
             <p>${escapeHtml(r.summary || "")}</p>
             <div class="card-actions">
               <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" onclick="toggleSave(${r.id})">
@@ -609,6 +755,8 @@
       let ingredientsMap = {};
       let stepsMap = {};
       let savedIds = new Set();
+      let reviewMap = {};
+      let avgMap = {};
 
       if (recipeIds.length) {
         const { data: ingredients } = await supabaseClient
@@ -628,6 +776,11 @@
           .select("recipe_id")
           .eq("device_id", deviceId);
 
+        const { data: reviews } = await supabaseClient
+          .from("reviews")
+          .select("recipe_id, rating")
+          .in("recipe_id", recipeIds);
+
         (ingredients || []).forEach(item => {
           if (!ingredientsMap[item.recipe_id]) ingredientsMap[item.recipe_id] = [];
           ingredientsMap[item.recipe_id].push(item.content);
@@ -639,6 +792,16 @@
         });
 
         savedIds = new Set((saves || []).map(v => v.recipe_id));
+
+        (reviews || []).forEach(item => {
+          if (!reviewMap[item.recipe_id]) reviewMap[item.recipe_id] = [];
+          reviewMap[item.recipe_id].push(Number(item.rating || 0));
+        });
+
+        Object.keys(reviewMap).forEach(key => {
+          const arr = reviewMap[key];
+          avgMap[key] = arr.reduce((a, b) => a + b, 0) / arr.length;
+        });
       }
 
       const myName = getMyAuthorName();
@@ -648,7 +811,8 @@
         ingredients: ingredientsMap[r.id] || [],
         steps: stepsMap[r.id] || [],
         isSaved: savedIds.has(r.id),
-        isMine: !!myName && r.author_name === myName
+        isMine: !!myName && r.author_name === myName,
+        avg_rating: avgMap[r.id] || 0
       }));
 
       renderRecipes();
