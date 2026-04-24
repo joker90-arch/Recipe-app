@@ -11,14 +11,14 @@ export default async function handler(req, res) {
     }
 
     if (!token || token !== process.env.ADMIN_DELETE_TOKEN) {
-      return res.status(401).json({ error: "관리자 비밀번호가 올바르지 않습니다." });
+      return res.status(401).json({ error: "Invalid admin token" });
     }
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
-      return res.status(500).json({ error: "Vercel 환경변수가 누락되었습니다." });
+      return res.status(500).json({ error: "Missing env vars" });
     }
 
     const headers = {
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(`${table} 삭제 실패: ${text}`);
+        throw new Error(`${table} delete failed: ${text}`);
       }
     }
 
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({
-      error: e.message || "관리자 삭제 중 오류가 발생했습니다."
+      error: e.message || "Admin delete failed"
     });
   }
 }
