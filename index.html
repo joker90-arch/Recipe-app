@@ -228,11 +228,13 @@
       <button class="btn btn-primary" id="openCreateBtn">레시피 올리기</button>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-all" onclick="changeTab('all')">모두의 레시피</button>
-      <button class="tab-btn" id="tab-mine" onclick="changeTab('mine')">내가 올린 레시피</button>
-      <button class="tab-btn" id="tab-saved" onclick="changeTab('saved')">저장한 레시피</button>
-    </div>
+<div class="tabs">
+  <button class="tab-btn active" id="tab-all" onclick="changeTab('all')">모두의 레시피</button>
+  <button class="tab-btn" id="tab-mine" onclick="changeTab('mine')">내가 올린 레시피</button>
+  <button class="tab-btn" id="tab-saved" onclick="changeTab('saved')">저장한 레시피</button>
+  <button class="tab-btn" id="tab-popular" onclick="changeTab('popular')">인기 레시피</button>
+  <button class="tab-btn" id="tab-latest" onclick="changeTab('latest')">최신 레시피</button>
+</div>
 
     <div id="list"></div>
   </div>
@@ -529,15 +531,31 @@
       renderRecipes();
     }
 
-    function getFilteredRecipes() {
-      if (state.currentTab === "mine") {
-        return state.recipes.filter(r => r.owner_device_id === deviceId);
-      }
-      if (state.currentTab === "saved") {
-        return state.recipes.filter(r => r.isSaved);
-      }
-      return state.recipes;
-    }
+ function getFilteredRecipes() {
+  if (state.currentTab === "mine") {
+    return state.recipes.filter(r => r.owner_device_id === deviceId);
+  }
+
+  if (state.currentTab === "saved") {
+    return state.recipes.filter(r => r.isSaved);
+  }
+
+  if (state.currentTab === "popular") {
+    return [...state.recipes].sort((a, b) => {
+      const aScore = a.isSaved ? 1 : 0;
+      const bScore = b.isSaved ? 1 : 0;
+      return bScore - aScore;
+    });
+  }
+
+  if (state.currentTab === "latest") {
+    return [...state.recipes].sort((a, b) => {
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+  }
+
+  return state.recipes;
+}
 
     function renderRecipes() {
       const data = getFilteredRecipes();
@@ -574,18 +592,16 @@
     }
 
     function changeTab(tab) {
-      state.currentTab = tab;
+  state.currentTab = tab;
 
-      document.getElementById("tab-all").classList.remove("active");
-      document.getElementById("tab-mine").classList.remove("active");
-      document.getElementById("tab-saved").classList.remove("active");
+  ["all", "mine", "saved", "popular", "latest"].forEach(name => {
+    document.getElementById(`tab-${name}`).classList.remove("active");
+  });
 
-      if (tab === "all") document.getElementById("tab-all").classList.add("active");
-      if (tab === "mine") document.getElementById("tab-mine").classList.add("active");
-      if (tab === "saved") document.getElementById("tab-saved").classList.add("active");
+  document.getElementById(`tab-${tab}`).classList.add("active");
 
-      renderRecipes();
-    }
+  renderRecipes();
+}
 
     async function toggleSave(recipeId) {
       const recipe = getRecipeById(recipeId);
