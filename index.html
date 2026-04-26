@@ -412,6 +412,79 @@ async function loadUser() {
   const { data } = await supabaseClient.auth.getUser();
   state.user = data.user || null;
 }
+    function renderAuthStatus() {
+  const el = document.getElementById("authStatus");
+
+  if (!el) return;
+
+  if (state.user) {
+    el.textContent = `로그인됨: ${state.user.email}`;
+  } else {
+    el.textContent = "로그인 전";
+  }
+}
+
+async function signUp() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value.trim();
+
+  if (!email || !password) {
+    alert("이메일과 비밀번호를 입력해 주세요.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  alert("회원가입 완료");
+}
+
+async function signIn() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value.trim();
+
+  if (!email || !password) {
+    alert("이메일과 비밀번호를 입력해 주세요.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  await loadUser();
+
+  renderAuthStatus();
+
+  await loadRecipes();
+
+  alert("로그인 완료");
+}
+
+async function signOut() {
+  await supabaseClient.auth.signOut();
+
+  state.user = null;
+
+  renderAuthStatus();
+
+  await loadRecipes();
+
+  alert("로그아웃 완료");
+}
     const listEl = document.getElementById("list");
     const createModal = document.getElementById("createModal");
     const editModal = document.getElementById("editModal");
@@ -943,7 +1016,11 @@ async function loadUser() {
       clearCreateForm();
       showModal(createModal);
     });
+    document.getElementById("signUpBtn").addEventListener("click", signUp);
 
+document.getElementById("signInBtn").addEventListener("click", signIn);
+
+document.getElementById("signOutBtn").addEventListener("click", signOut);
     document.getElementById("closeCreateBtn").addEventListener("click", () => hideModal(createModal));
     document.getElementById("submitCreateBtn").addEventListener("click", createRecipe);
     document.getElementById("closeEditBtn").addEventListener("click", () => hideModal(editModal));
