@@ -413,14 +413,35 @@ async function loadUser() {
   state.user = data.user || null;
 }
     function renderAuthStatus() {
-  const el = document.getElementById("authStatus");
+  const statusEl = document.getElementById("authStatus");
 
-  if (!el) return;
+  const emailEl = document.getElementById("authEmail");
+  const passwordEl = document.getElementById("authPassword");
+
+  const signUpBtn = document.getElementById("signUpBtn");
+  const signInBtn = document.getElementById("signInBtn");
+  const signOutBtn = document.getElementById("signOutBtn");
 
   if (state.user) {
-    el.textContent = `로그인됨: ${state.user.email}`;
+    statusEl.textContent = `로그인됨: ${state.user.email}`;
+
+    emailEl.style.display = "none";
+    passwordEl.style.display = "none";
+
+    signUpBtn.style.display = "none";
+    signInBtn.style.display = "none";
+
+    signOutBtn.style.display = "inline-block";
   } else {
-    el.textContent = "로그인 전";
+    statusEl.textContent = "로그인 전";
+
+    emailEl.style.display = "inline-block";
+    passwordEl.style.display = "inline-block";
+
+    signUpBtn.style.display = "inline-block";
+    signInBtn.style.display = "inline-block";
+
+    signOutBtn.style.display = "none";
   }
 }
 
