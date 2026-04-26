@@ -358,12 +358,17 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const state = {
-      currentTab: "all",
-      recipes: [],
-      currentEditRecipeId: null,
-      currentDetailRecipeId: null
-    };
+  currentTab: "all",
+  recipes: [],
+  currentEditRecipeId: null,
+  currentDetailRecipeId: null,
+  user: null
+};
 
+async function loadUser() {
+  const { data } = await supabaseClient.auth.getUser();
+  state.user = data.user || null;
+}
     const listEl = document.getElementById("list");
     const createModal = document.getElementById("createModal");
     const editModal = document.getElementById("editModal");
