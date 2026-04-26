@@ -222,11 +222,54 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="hero">
-      <h1>우리의 레시피</h1>
-      <p>내가 올린 레시피와 다른 사람의 레시피를 구분하고 저장할 수 있는 공간</p>
-      <button class="btn btn-primary" id="openCreateBtn">레시피 올리기</button>
+  <div class="hero">
+    <h1>우리의 레시피</h1>
+
+    <p>
+      내가 올린 레시피와 다른 사람의 레시피를 구분하고 저장할 수 있는 공간
+    </p>
+
+    <button class="btn btn-primary" id="openCreateBtn">
+      레시피 올리기
+    </button>
+
+    <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+      <input
+        id="authEmail"
+        type="email"
+        placeholder="이메일"
+        style="max-width:220px;"
+      >
+
+      <input
+        id="authPassword"
+        type="password"
+        placeholder="비밀번호"
+        style="max-width:180px;"
+      >
+
+      <button class="btn btn-secondary" id="signUpBtn">
+        회원가입
+      </button>
+
+      <button class="btn btn-secondary" id="signInBtn">
+        로그인
+      </button>
+
+      <button class="btn btn-secondary" id="signOutBtn">
+        로그아웃
+      </button>
     </div>
+
+    <div
+      id="authStatus"
+      style="margin-top:10px; color:#666; font-size:14px;"
+    >
+      로그인 전
+    </div>
+
+  </div>
+</div>
 
 <div class="tabs">
   <button class="tab-btn active" id="tab-all" onclick="changeTab('all')">모두의 레시피</button>
