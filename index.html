@@ -436,14 +436,23 @@ function renderRecipes() {
         <div class="meta">작성자: ${escapeHtml(r.author_name || "익명")}</div>
         <p>${escapeHtml(r.summary || "")}</p>
         <div class="card-actions">
-          <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" data-action="save" data-id="${r.id}">
-            ${r.isSaved ? "저장 해제" : "저장하기"}
-          </button>
-          <button class="btn btn-secondary" data-action="detail" data-id="${r.id}">자세히 보기</button>
-          ${r.isMine ? `<button class="btn btn-secondary" data-action="edit" data-id="${r.id}">수정</button>` : ""}
-          ${r.isMine ? `<button class="btn btn-danger" data-action="delete" data-id="${r.id}">삭제</button>` : ""}
-          <button class="btn btn-danger" data-action="admin-delete" data-id="${r.id}">관리자 삭제</button>
-        </div>
+  <button class="btn ${r.isSaved ? "btn-primary" : "btn-secondary"}" data-action="save" data-id="${r.id}">
+    ${r.isSaved ? "저장 해제" : "저장하기"}
+  </button>
+
+  <button class="btn btn-secondary" data-action="detail" data-id="${r.id}">
+    자세히 보기
+  </button>
+
+  ${r.isMine ? `<button class="btn btn-secondary" data-action="edit" data-id="${r.id}">수정</button>` : ""}
+
+  ${r.isMine ? `<button class="btn btn-danger" data-action="delete" data-id="${r.id}">삭제</button>` : ""}
+
+  ${state.user && state.user.email === "uruzes@naver.com"
+    ? `<button class="btn btn-danger" data-action="admin-delete" data-id="${r.id}">관리자 삭제</button>`
+    : ""
+  }
+</div>
       </div>
     </div>
   `).join("");
