@@ -346,12 +346,7 @@
       </div>
     </section>
 
-    <div class="top-filter">
-      <button class="chip active" id="tab-all" onclick="changeTab('all')">모두</button>
-      <button class="chip" id="tab-mine" onclick="changeTab('mine')">내 레시피</button>
-      <button class="chip" id="tab-saved" onclick="changeTab('saved')">저장됨</button>
-      <button class="chip" id="tab-latest" onclick="changeTab('latest')">최신순</button>
-    </div>
+ 
 
     <section id="list"></section>
   </main>
@@ -735,15 +730,6 @@
     function changeTab(tab) {
       state.currentTab = tab;
 
-      ["all", "mine", "saved", "latest"].forEach(name => {
-        const top = document.getElementById(`tab-${name}`);
-        if (top) top.classList.remove("active");
-      });
-
-      ["all", "mine", "saved"].forEach(name => {
-        const nav = document.getElementById(`nav-${name}`);
-        if (nav) nav.classList.remove("active");
-      });
 
       const topActive = document.getElementById(`tab-${tab}`);
       if (topActive) topActive.classList.add("active");
