@@ -728,17 +728,18 @@
     }
 
     function changeTab(tab) {
-      state.currentTab = tab;
+  state.currentTab = tab;
 
+  ["all", "saved", "mine"].forEach(name => {
+    const nav = document.getElementById(`nav-${name}`);
+    if (nav) nav.classList.remove("active");
+  });
 
-      const topActive = document.getElementById(`tab-${tab}`);
-      if (topActive) topActive.classList.add("active");
+  const navActive = document.getElementById(`nav-${tab}`);
+  if (navActive) navActive.classList.add("active");
 
-      const navActive = document.getElementById(`nav-${tab}`);
-      if (navActive) navActive.classList.add("active");
-
-      renderRecipes();
-    }
+  renderRecipes();
+}
 
     async function createRecipe() {
       try {
